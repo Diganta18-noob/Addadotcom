@@ -1,0 +1,386 @@
+// ─── AddaDotCom — Prisma Schema ─────────────────────────────
+// Full data model for café & restaurant web application
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────
+
+enum UserRole {
+  CUSTOMER
+  STAFF
+  MANAGER
+  ADMIN
+}
+
+enum TableStatus {
+  FREE
+  RESERVED
+  OCCUPIED
+  BILL_REQUESTED
+  NEEDS_CLEANING
+}
+
+enum TableZone {
+  INDOOR
+  OUTDOOR
+  TERRACE
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  SEATED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+  DELIVERY
+}
+
+enum OrderStatus {
+  PLACED
+  ACCEPTED
+  PREPARING
+  READY
+  SERVED
+  OUT_FOR_DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+enum BillStatus {
+  UNPAID
+  PAID
+  REFUNDED
+  VOID
+}
+
+enum PromoType {
+  PERCENTAGE
+  FIXED
+}
+
+// ─── Models ─────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  phone         String?
+  passwordHash  String?
+  image         String?
+  role          UserRole  @default(CUSTOMER)
+  loyaltyPoints Int       @default(0)
+
+  // Relations
+  addresses    Address[]
+  orders       Order[]
+  reservations Reservation[]
+  billsCashed  Bill[]        @relation("CashierBills")
+
+  // Auth.js
+  accounts Account[]
+  sessions Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Address {
+  id         String  @id @default(cuid())
+  userId     String
+  label      String  @default("Home") // Home, Work, Other
+  street     String
+  city       String
+  state      String?
+  postalCode String
+  phone      String?
+  isDefault  Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("addresses")
+}
+
+// ─── Menu ───────────────────────────────────────────────────
+
+model Category {
+  id        String @id @default(cuid())
+  name      String
+  slug      String @unique
+  image     String?
+  sortOrder Int    @default(0)
+
+  items MenuItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model MenuItem {
+  id          String  @id @default(cuid())
+  categoryId  String
+  name        String
+  slug        String  @unique
+  description String?
+  price       Float
+  image       String?
+  tags        String  @default("") // Comma-separated tags (VEG, NON_VEG, etc.)
+  isAvailable Boolean  @default(true)
+  prepTime    Int?     // minutes
+  sortOrder   Int      @default(0)
+  isSpecial   Boolean  @default(false)
+  isBestseller Boolean @default(false)
+
+  // JSON fields for flexible variant/addon configs
+  // variants: [{ name: "Size", options: [{ label: "Small", priceModifier: 0 }, { label: "Medium", priceModifier: 30 }, { label: "Large", priceModifier: 60 }] }]
+  variants Json @default("[]")
+
+  // addons: [{ name: "Extra Shot", price: 40 }, { name: "Whipped Cream", price: 30 }]
+  addons Json @default("[]")
+
+  // recipe for inventory deduction: [{ inventoryItemId: "...", quantity: 0.02, unit: "kg" }]
+  recipe Json @default("[]")
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("menu_items")
+}
+
+// ─── Tables ─────────────────────────────────────────────────
+
+model CafeTable {
+  id       String      @id @default(cuid())
+  number   Int         @unique
+  capacity Int
+  zone     TableZone   @default(INDOOR)
+  status   TableStatus @default(FREE)
+
+  reservations Reservation[]
+  orders       Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cafe_tables")
+}
+
+// ─── Reservations ───────────────────────────────────────────
+
+model Reservation {
+  id          String            @id @default(cuid())
+  userId      String?
+  guestName   String
+  guestEmail  String?
+  guestPhone  String
+  date        DateTime
+  timeSlot    String            // "19:00"
+  duration    Int               @default(90) // minutes
+  partySize   Int
+  tableId     String?
+  status      ReservationStatus @default(PENDING)
+  bookingCode String            @unique
+  notes       String?
+
+  user   User?      @relation(fields: [userId], references: [id])
+  table  CafeTable? @relation(fields: [tableId], references: [id])
+  orders Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reservations")
+}
+
+// ─── Orders ─────────────────────────────────────────────────
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  userId          String?
+  type            OrderType
+  tableId         String?
+  reservationId   String?
+  status          OrderStatus @default(PLACED)
+  notes           String?
+
+  // Delivery-specific
+  deliveryAddress String?
+  deliveryFee     Float       @default(0)
+  pickupTime      DateTime?
+
+  // JSON array: [{ menuItemId, menuItemName, qty, variant, addons[], note, unitPrice, totalPrice }]
+  items Json
+
+  user        User?        @relation(fields: [userId], references: [id])
+  table       CafeTable?   @relation(fields: [tableId], references: [id])
+  reservation Reservation? @relation(fields: [reservationId], references: [id])
+  bill        Bill?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("orders")
+}
+
+// ─── Billing ────────────────────────────────────────────────
+
+model Bill {
+  id                String     @id @default(cuid())
+  billNumber        String     @unique
+  orderId           String     @unique
+  subtotal          Float
+  serviceCharge     Float      @default(0)
+  serviceChargeRate Float      @default(0) // percentage
+  total             Float
+  roundingAdj       Float      @default(0)
+  status            BillStatus @default(UNPAID)
+  cashierId         String?
+  refundReason      String?
+  pdfUrl            String?
+
+  // JSON: [{ label: "10% Discount", type: "PERCENTAGE"|"FIXED", value: 10, amount: 50 }]
+  discounts Json @default("[]")
+
+  // JSON: [{ name: "CGST", rate: 2.5, amount: 25 }, { name: "SGST", rate: 2.5, amount: 25 }]
+  taxes Json @default("[]")
+
+  // JSON: [{ method: "CASH"|"CARD"|"UPI"|"WALLET", amount: 500, reference?: "txn_123" }]
+  payments Json @default("[]")
+
+  // JSON: { type: "EQUAL"|"BY_ITEMS", parts: [...] }
+  splitConfig Json?
+
+  order   Order @relation(fields: [orderId], references: [id])
+  cashier User? @relation("CashierBills", fields: [cashierId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("bills")
+}
+
+// ─── Inventory ──────────────────────────────────────────────
+
+model InventoryItem {
+  id                String @id @default(cuid())
+  name              String
+  unit              String // kg, liters, pieces, etc.
+  quantity          Float  @default(0)
+  lowStockThreshold Float  @default(0)
+
+  stockLogs StockLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("inventory_items")
+}
+
+model StockLog {
+  id              String @id @default(cuid())
+  inventoryItemId String
+  change          Float  // positive = add, negative = deduct
+  reason          String
+  createdBy       String?
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("stock_logs")
+}
+
+// ─── Promo Codes ────────────────────────────────────────────
+
+model PromoCode {
+  id         String    @id @default(cuid())
+  code       String    @unique
+  type       PromoType
+  value      Float     // percentage or fixed amount
+  minOrder   Float     @default(0)
+  maxDiscount Float?   // cap for percentage discounts
+  expiresAt  DateTime?
+  usageLimit Int?
+  usageCount Int       @default(0)
+  isActive   Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("promo_codes")
+}
+
+// ─── Settings ───────────────────────────────────────────────
+
+model Setting {
+  key       String @id
+  value     String
+  group     String @default("general") // general, tax, delivery, reservation, etc.
+
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
