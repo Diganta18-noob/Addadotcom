@@ -68,6 +68,23 @@ export default function OrderPage() {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [loading, setLoading] = useState(false);
+  const [realtimeTables, setRealtimeTables] = useState<any[]>([]);
+  const [loadingTables, setLoadingTables] = useState(false);
+
+  React.useEffect(() => {
+    if (orderType === "DINE_IN") {
+      setLoadingTables(true);
+      fetch("/api/tables")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.data)) {
+            setRealtimeTables(data.data);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoadingTables(false));
+    }
+  }, [orderType]);
 
   const subtotal = getSubtotal();
   const taxes = getTaxes();
@@ -274,15 +291,66 @@ export default function OrderPage() {
 
               {/* Conditional fields */}
               {orderType === "DINE_IN" && (
-                <div className="mt-4">
-                  <label className="text-sm font-medium mb-1.5 block">Table Number *</label>
-                  <input
-                    type="text"
-                    value={tableNumber}
-                    onChange={(e) => setTableNumber(e.target.value)}
-                    placeholder="Enter your table number"
-                    className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
-                  />
+                <div className="mt-4 space-y-2">
+                  <label className="text-sm font-medium block">Select Table Number *</label>
+                  {loadingTables ? (
+                    <div className="text-xs text-muted-foreground animate-pulse py-2">
+                      Loading real-time table availability...
+                    </div>
+                  ) : realtimeTables.length === 0 ? (
+                    <input
+                      type="text"
+                      value={tableNumber}
+                      onChange={(e) => setTableNumber(e.target.value)}
+                      placeholder="Enter table number (e.g. 5)"
+                      className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      <select
+                        value={tableNumber}
+                        onChange={(e) => setTableNumber(e.target.value)}
+                        className="w-full px-4 py-3 bg-card border border-border rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-caramel/50"
+                      >
+                        <option value="">-- Select an Available Table --</option>
+                        {realtimeTables.map((t) => (
+                          <option key={t.id} value={t.number.toString()} disabled={t.status !== "FREE"}>
+                            Table {t.number} ({t.zone}) - {t.capacity} Seats {t.status === "FREE" ? "🟢 Available" : `🔴 (${t.status})`}
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Interactive table cards */}
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        {realtimeTables.map((t) => {
+                          const isFree = t.status === "FREE";
+                          const isSelected = tableNumber === t.number.toString();
+                          return (
+                            <button
+                              type="button"
+                              key={t.id}
+                              disabled={!isFree}
+                              onClick={() => setTableNumber(t.number.toString())}
+                              className={cn(
+                                "p-2.5 rounded-xl border text-center text-xs font-semibold transition-all flex flex-col items-center justify-center gap-1",
+                                isSelected
+                                  ? "border-caramel bg-caramel text-espresso font-bold shadow-md scale-105"
+                                  : isFree
+                                  ? "border-green-500/40 bg-green-500/10 hover:border-green-500 hover:bg-green-500/20"
+                                  : "border-border bg-muted/50 text-muted-foreground opacity-50 cursor-not-allowed"
+                              )}
+                            >
+                              <span className="font-bold text-sm">Table {t.number}</span>
+                              <span className="text-[10px] opacity-80">{t.capacity} Seats</span>
+                              <span className="text-[9px] font-bold">
+                                {isSelected ? "✓ Selected" : isFree ? "🟢 Free" : "🔴 Occupied"}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               {orderType === "TAKEAWAY" && (
