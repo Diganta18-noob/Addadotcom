@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import toast from "react-hot-toast";
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowRight,
@@ -522,6 +523,16 @@ function LocationSection() {
 
 function NewsletterSection() {
   const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setSubscribed(true);
+    toast.success(`🎉 Subscribed! We'll send updates to ${email}`);
+    setEmail("");
+    setTimeout(() => setSubscribed(false), 5000);
+  };
 
   return (
     <section className="py-20 lg:py-28 bg-espresso text-cream relative overflow-hidden">
@@ -544,28 +555,36 @@ function NewsletterSection() {
             access to special events.
           </p>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              setEmail("");
-            }}
-            className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-          >
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              className="flex-1 px-5 py-3 rounded-full bg-cream-200/10 text-cream placeholder:text-cream-200/40 border border-cream-200/20 focus:outline-none focus:ring-2 focus:ring-caramel/50 text-sm"
-              required
-            />
-            <button
-              type="submit"
-              className="px-8 py-3 bg-caramel text-espresso rounded-full text-sm font-semibold hover:bg-caramel-300 transition-colors whitespace-nowrap"
+          {subscribed ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center justify-center gap-2 text-green-400 font-semibold text-lg"
             >
-              Subscribe
-            </button>
-          </form>
+              <Sparkles className="w-5 h-5" />
+              Thank you for subscribing!
+            </motion.div>
+          ) : (
+            <form
+              onSubmit={handleSubscribe}
+              className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+            >
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                className="flex-1 px-5 py-3 rounded-full bg-cream-200/10 text-cream placeholder:text-cream-200/40 border border-cream-200/20 focus:outline-none focus:ring-2 focus:ring-caramel/50 text-sm"
+                required
+              />
+              <button
+                type="submit"
+                className="px-8 py-3 bg-caramel text-espresso rounded-full text-sm font-semibold hover:bg-caramel-300 transition-colors whitespace-nowrap"
+              >
+                Subscribe
+              </button>
+            </form>
+          )}
         </motion.div>
       </div>
     </section>

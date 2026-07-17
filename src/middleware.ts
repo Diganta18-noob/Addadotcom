@@ -1,35 +1,36 @@
-import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextRequest } from "next/request";
+import { getToken } from "next-auth/jwt";
 
-// Roles allowed to access admin routes
-const ADMIN_ROLES = ["ADMIN", "MANAGER", "STAFF"];
-
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
   // Only protect /admin routes
-  if (!pathname.startsWith("/admin")) {
-    return NextResponse.next();
-  }
+  if (pathname.startsWith("/admin")) {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+    // 1. Unauthenticated users -> redirect to auth/login
+    if (!token) {
+      const loginUrl = new URL("/api/auth/signin", req.url);
+      loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
+      return NextResponse.redirect(loginUrl);
+    }
 
-  // Not authenticated — redirect to sign-in page
-  if (!token) {
-    const signInUrl = new URL("/account", request.url);
-    signInUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(signInUrl);
-  }
+    const role = (token.role as string) || "CUSTOMER";
 
-  // Authenticated but wrong role — redirect with error
-  if (!token.role || !ADMIN_ROLES.includes(token.role as string)) {
-    const unauthorizedUrl = new URL("/account", request.url);
-    unauthorizedUrl.searchParams.set("error", "unauthorized");
-    return NextResponse.redirect(unauthorizedUrl);
+    // 2. Customers -> 403 Forbidden
+    if (role === "CUSTOMER") {
+      const unauthorizedUrl = new URL("/", req.url);
+      return NextResponse.redirect(unauthorizedUrl);
+    }
+
+    // 3. Sensitive financial/reporting routes -> Admin or Manager only
+    if (pathname.startsWith("/admin/reports") || pathname.startsWith("/admin/billing")) {
+      if (role !== "ADMIN" && role !== "MANAGER") {
+        const forbiddenUrl = new URL("/admin/orders", req.url);
+        return NextResponse.redirect(forbiddenUrl);
+      }
+    }
   }
 
   return NextResponse.next();

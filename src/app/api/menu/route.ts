@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { apiHandler } from "@/lib/api-helpers";
 import { createMenuItemSchema } from "@/lib/validations";
+import { CacheManager, CACHE_KEYS } from "@/lib/redis";
 
 export const GET = apiHandler(async (request) => {
   const { searchParams } = new URL(request.url);
@@ -9,6 +10,15 @@ export const GET = apiHandler(async (request) => {
   const tags = searchParams.get("tags");
   const available = searchParams.get("available");
   const special = searchParams.get("special");
+
+  // Check cache for default unfiltered menu load
+  const isDefaultQuery = !category && !search && !tags && !available && !special;
+  if (isDefaultQuery) {
+    const cachedData = CacheManager.get(CACHE_KEYS.PUBLIC_MENU);
+    if (cachedData) {
+      return { data: cachedData };
+    }
+  }
 
   const where: any = {};
 
@@ -23,8 +33,6 @@ export const GET = apiHandler(async (request) => {
     ];
   }
 
-  // Fix: Use `contains` instead of `hasSome` — tags is stored as a
-  // comma-separated string in SQLite, not an array.
   if (tags) {
     const tagList = tags.split(",").map((t) => t.trim());
     where.AND = tagList.map((tag) => ({
@@ -50,21 +58,25 @@ export const GET = apiHandler(async (request) => {
     },
   });
 
-  // If filtering, also get items directly
   const items = await prisma.menuItem.findMany({
     where,
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     include: { category: true },
   });
 
-  return { data: { categories, items } };
+  const responseData = { categories, items };
+
+  if (isDefaultQuery) {
+    CacheManager.set(CACHE_KEYS.PUBLIC_MENU, responseData, 3600); // 1 hour TTL
+  }
+
+  return { data: responseData };
 });
 
 export const POST = apiHandler(async (request) => {
   const body = await request.json();
   const data = createMenuItemSchema.parse(body);
 
-  // Convert tags array to comma-separated string if needed
   const tagsValue = Array.isArray(data.tags) ? data.tags.join(",") : data.tags;
 
   const item = await prisma.menuItem.create({
@@ -86,6 +98,9 @@ export const POST = apiHandler(async (request) => {
     },
     include: { category: true },
   });
+
+  // Invalidate public menu cache
+  CacheManager.del(CACHE_KEYS.PUBLIC_MENU);
 
   return { data: item, status: 201 };
 });
