@@ -61,8 +61,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchDashboardStats();
-    // Poll stats every 30 seconds
-    const interval = setInterval(fetchDashboardStats, 30000);
+    // Ultra-fast 3s real-time dashboard refresh
+    const interval = setInterval(fetchDashboardStats, 3000);
     return () => clearInterval(interval);
   }, [fetchDashboardStats]);
 

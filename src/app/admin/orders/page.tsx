@@ -76,15 +76,47 @@ export default function AdminOrders() {
   const [viewMode, setViewMode] = useState<"queue" | "kitchen">("queue");
   const [searchQuery, setSearchQuery] = useState("");
 
+  const previousOrderIdsRef = React.useRef<Set<string>>(new Set());
+
+  const playChime = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15); // A5
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+    } catch {}
+  };
+
   const fetchOrders = useCallback(async () => {
     try {
       const res = await fetch("/api/orders?today=true");
       const data = await res.json();
-      if (data.success) {
+      if (data.success && Array.isArray(data.data)) {
         const parsed = data.data.map((order: any) => ({
           ...order,
           items: typeof order.items === "string" ? JSON.parse(order.items) : order.items,
         }));
+
+        // Detect newly placed orders
+        if (previousOrderIdsRef.current.size > 0) {
+          const newOrders = parsed.filter((o: any) => !previousOrderIdsRef.current.has(o.id));
+          if (newOrders.length > 0) {
+            playChime();
+            newOrders.forEach((n: any) => {
+              toast.success(`🔔 NEW ORDER: ${n.orderNumber} (${n.type})!`, { duration: 6000 });
+            });
+          }
+        }
+
+        previousOrderIdsRef.current = new Set(parsed.map((o: any) => o.id));
         setOrders(parsed);
       }
     } catch (error) {
@@ -94,10 +126,10 @@ export default function AdminOrders() {
     }
   }, []);
 
-  // Initial fetch + auto-refresh every 10 seconds
+  // Initial fetch + ultra-fast 2s real-time refresh
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 10000);
+    const interval = setInterval(fetchOrders, 2000);
     return () => clearInterval(interval);
   }, [fetchOrders]);
 

@@ -123,13 +123,15 @@ export default function OrderPage() {
 
     setLoading(true);
 
+    const selectedTableObj = realtimeTables.find((t) => t.number.toString() === tableNumber);
+
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: orderType,
-          tableId: null,
+          tableId: selectedTableObj?.id || undefined,
           items: items.map((i) => ({
             menuItemId: i.menuItemId,
             menuItemName: i.menuItemName,
