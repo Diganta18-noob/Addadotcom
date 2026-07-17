@@ -59,7 +59,8 @@ export default function AdminTables() {
 
   useEffect(() => {
     fetchTables();
-    const interval = setInterval(fetchTables, 15000);
+    // Real-time 2s table status refresh
+    const interval = setInterval(fetchTables, 2000);
     return () => clearInterval(interval);
   }, [fetchTables]);
 
