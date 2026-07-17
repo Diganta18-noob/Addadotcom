@@ -1,48 +1,41 @@
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { apiHandler, ApiError } from "@/lib/api-helpers";
+import { validatePromoSchema } from "@/lib/validations";
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { code, amount } = body;
+export const POST = apiHandler(async (request) => {
+  const body = await request.json();
+  const data = validatePromoSchema.parse(body);
 
-    if (!code) {
-      return NextResponse.json({ success: false, error: "Promo code required" }, { status: 400 });
-    }
+  const promo = await prisma.promoCode.findUnique({
+    where: { code: data.code.toUpperCase() },
+  });
 
-    const promo = await prisma.promoCode.findUnique({
-      where: { code: code.toUpperCase() },
-    });
-
-    if (!promo || !promo.isActive) {
-      return NextResponse.json({ success: false, error: "Invalid or inactive promo code" }, { status: 404 });
-    }
-
-    if (promo.expiresAt && new Date(promo.expiresAt) < new Date()) {
-      return NextResponse.json({ success: false, error: "Promo code has expired" }, { status: 400 });
-    }
-
-    if (promo.usageLimit && promo.usageCount >= promo.usageLimit) {
-      return NextResponse.json({ success: false, error: "Promo code usage limit reached" }, { status: 400 });
-    }
-
-    if (amount && amount < promo.minOrder) {
-      return NextResponse.json({
-        success: false,
-        error: `Minimum order amount of ₹${promo.minOrder} required for this promo code`,
-      }, { status: 400 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        code: promo.code,
-        type: promo.type,
-        value: promo.value,
-        maxDiscount: promo.maxDiscount,
-      },
-    });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Failed to validate promo code" }, { status: 500 });
+  if (!promo || !promo.isActive) {
+    throw new ApiError(404, "INVALID_PROMO", "Invalid or inactive promo code");
   }
-}
+
+  if (promo.expiresAt && new Date(promo.expiresAt) < new Date()) {
+    throw new ApiError(400, "PROMO_EXPIRED", "Promo code has expired");
+  }
+
+  if (promo.usageLimit && promo.usageCount >= promo.usageLimit) {
+    throw new ApiError(400, "PROMO_LIMIT_REACHED", "Promo code usage limit reached");
+  }
+
+  if (data.amount < promo.minOrder) {
+    throw new ApiError(
+      400,
+      "MIN_ORDER_NOT_MET",
+      `Minimum order amount of ₹${promo.minOrder} required for this promo code`
+    );
+  }
+
+  return {
+    data: {
+      code: promo.code,
+      type: promo.type,
+      value: promo.value,
+      maxDiscount: promo.maxDiscount,
+    },
+  };
+});

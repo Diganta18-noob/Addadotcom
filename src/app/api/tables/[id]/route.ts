@@ -1,43 +1,24 @@
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { apiHandler } from "@/lib/api-helpers";
+import { updateTableSchema } from "@/lib/validations";
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const body = await request.json();
+export const PUT = apiHandler(async (request, { params }) => {
+  const body = await request.json();
+  const data = updateTableSchema.parse(body);
 
-    const table = await prisma.cafeTable.update({
-      where: { id: params.id },
-      data: {
-        ...(body.number !== undefined && { number: parseInt(body.number) }),
-        ...(body.capacity !== undefined && { capacity: parseInt(body.capacity) }),
-        ...(body.zone && { zone: body.zone }),
-        ...(body.status && { status: body.status }),
-      },
-    });
+  const table = await prisma.cafeTable.update({
+    where: { id: params.id },
+    data: {
+      ...(data.status && { status: data.status }),
+      ...(data.capacity !== undefined && { capacity: data.capacity }),
+      ...(data.zone && { zone: data.zone }),
+    },
+  });
 
-    return NextResponse.json({ success: true, data: table });
-  } catch (error) {
-    return NextResponse.json(
-      { success: false, error: "Failed to update table" },
-      { status: 500 }
-    );
-  }
-}
+  return { data: table };
+});
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    await prisma.cafeTable.delete({ where: { id: params.id } });
-    return NextResponse.json({ success: true, message: "Table deleted" });
-  } catch (error) {
-    return NextResponse.json(
-      { success: false, error: "Failed to delete table" },
-      { status: 500 }
-    );
-  }
-}
+export const DELETE = apiHandler(async (request, { params }) => {
+  await prisma.cafeTable.delete({ where: { id: params.id } });
+  return { data: { message: "Table deleted" } };
+});

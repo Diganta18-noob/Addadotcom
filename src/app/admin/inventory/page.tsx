@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { SearchInput, EmptyState } from "@/components/shared";
@@ -14,8 +14,17 @@ import {
   History,
   TrendingDown,
   TrendingUp,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
+
+interface StockLog {
+  id: string;
+  change: number;
+  reason: string;
+  createdAt: string;
+}
 
 interface InventoryItem {
   id: string;
@@ -23,42 +32,53 @@ interface InventoryItem {
   unit: string;
   quantity: number;
   lowStockThreshold: number;
+  stockLogs?: StockLog[];
 }
-
-interface StockLog {
-  id: string;
-  itemName: string;
-  change: number;
-  reason: string;
-  createdAt: string;
-}
-
-const initialInventory: InventoryItem[] = [
-  { id: "i1", name: "Coffee Beans (Arabica)", unit: "kg", quantity: 18.5, lowStockThreshold: 5.0 },
-  { id: "i2", name: "Whole Milk", unit: "Liters", quantity: 4.2, lowStockThreshold: 10.0 },
-  { id: "i3", name: "Almond Milk", unit: "Liters", quantity: 12.0, lowStockThreshold: 5.0 },
-  { id: "i4", name: "Chocolate Sauce", unit: "kg", quantity: 2.1, lowStockThreshold: 3.0 },
-  { id: "i5", name: "Brioche Bread", unit: "Loaves", quantity: 15.0, lowStockThreshold: 8.0 },
-  { id: "i6", name: "Avocado", unit: "pcs", quantity: 8.0, lowStockThreshold: 15.0 },
-];
-
-const initialLogs: StockLog[] = [
-  { id: "l1", itemName: "Whole Milk", change: -2.0, reason: "Daily usage deduction", createdAt: new Date().toISOString() },
-  { id: "l2", itemName: "Coffee Beans (Arabica)", change: 10.0, reason: "Stock purchase replenishment", createdAt: new Date(Date.now() - 3600000).toISOString() },
-  { id: "l3", itemName: "Brioche Bread", change: -4.0, reason: "French Toast prep", createdAt: new Date(Date.now() - 7200000).toISOString() },
-];
 
 export default function AdminInventoryPage() {
-  const [inventory, setInventory] = useState<InventoryItem[]>(initialInventory);
-  const [logs, setLogs] = useState<StockLog[]>(initialLogs);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterLowStock, setFilterLowStock] = useState(false);
   const [isAdjusting, setIsAdjusting] = useState(false);
   const [adjustItem, setAdjustItem] = useState<InventoryItem | null>(null);
   const [adjustQty, setAdjustQty] = useState("");
   const [adjustReason, setAdjustReason] = useState("Manual adjustment");
+  const [adjusting, setAdjusting] = useState(false);
 
-  const handleAdjustStock = (e: React.FormEvent) => {
+  // Fetch inventory from API
+  const fetchInventory = useCallback(async () => {
+    try {
+      const res = await fetch("/api/inventory");
+      const data = await res.json();
+      if (data.success) {
+        setInventory(data.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch inventory:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchInventory();
+    const interval = setInterval(fetchInventory, 30000);
+    return () => clearInterval(interval);
+  }, [fetchInventory]);
+
+  // Collect all stock logs from all items for the activity feed
+  const allLogs = inventory
+    .flatMap((item) =>
+      (item.stockLogs || []).map((log) => ({
+        ...log,
+        itemName: item.name,
+      }))
+    )
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 20);
+
+  const handleAdjustStock = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adjustItem || !adjustQty) return;
 
@@ -68,29 +88,42 @@ export default function AdminInventoryPage() {
       return;
     }
 
-    // Update item stock
-    setInventory((prev) =>
-      prev.map((item) =>
-        item.id === adjustItem.id
-          ? { ...item, quantity: Math.max(0, item.quantity + delta) }
-          : item
-      )
-    );
+    setAdjusting(true);
 
-    // Add Stock Log
-    const newLog: StockLog = {
-      id: String(Date.now()),
-      itemName: adjustItem.name,
-      change: delta,
-      reason: adjustReason,
-      createdAt: new Date().toISOString(),
-    };
-    setLogs((prev) => [newLog, ...prev]);
+    try {
+      const res = await fetch(`/api/inventory/${adjustItem.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ change: delta, reason: adjustReason }),
+      });
 
-    toast.success(`Inventory updated for ${adjustItem.name}`);
-    setIsAdjusting(false);
-    setAdjustItem(null);
-    setAdjustQty("");
+      const data = await res.json();
+      if (!data.success) {
+        toast.error(data.error?.message || "Failed to update inventory");
+        return;
+      }
+
+      // Update local state with the server response
+      setInventory((prev) =>
+        prev.map((item) =>
+          item.id === adjustItem.id
+            ? { ...item, quantity: data.data.quantity }
+            : item
+        )
+      );
+
+      toast.success(`Inventory updated for ${adjustItem.name}`);
+      setIsAdjusting(false);
+      setAdjustItem(null);
+      setAdjustQty("");
+
+      // Refetch to get updated stock logs
+      fetchInventory();
+    } catch {
+      toast.error("Failed to update inventory");
+    } finally {
+      setAdjusting(false);
+    }
   };
 
   const filteredItems = inventory.filter((item) => {
@@ -101,6 +134,15 @@ export default function AdminInventoryPage() {
   });
 
   const lowStockCount = inventory.filter((item) => item.quantity <= item.lowStockThreshold).length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-caramel" />
+        <span className="ml-3 text-muted-foreground">Loading inventory...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -141,8 +183,8 @@ export default function AdminInventoryPage() {
             <History className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Stock Updates Today</p>
-            <p className="text-2xl font-bold font-serif">{logs.length}</p>
+            <p className="text-sm text-muted-foreground">Recent Stock Updates</p>
+            <p className="text-2xl font-bold font-serif">{allLogs.length}</p>
           </div>
         </div>
       </div>
@@ -156,18 +198,27 @@ export default function AdminInventoryPage() {
           className="w-full sm:max-w-xs"
         />
 
-        <button
-          onClick={() => setFilterLowStock(!filterLowStock)}
-          className={cn(
-            "px-4 py-2 rounded-xl text-sm font-medium border transition-all flex items-center gap-2",
-            filterLowStock
-              ? "border-red-500 bg-red-50 text-red-600 dark:bg-red-950/30"
-              : "border-border hover:bg-muted"
-          )}
-        >
-          <AlertTriangle className="w-4 h-4" />
-          Show Low Stock Only
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFilterLowStock(!filterLowStock)}
+            className={cn(
+              "px-4 py-2 rounded-xl text-sm font-medium border transition-all flex items-center gap-2",
+              filterLowStock
+                ? "border-red-500 bg-red-50 text-red-600 dark:bg-red-950/30"
+                : "border-border hover:bg-muted"
+            )}
+          >
+            <AlertTriangle className="w-4 h-4" />
+            Show Low Stock Only
+          </button>
+          <button
+            onClick={() => { setLoading(true); fetchInventory(); }}
+            className="px-3 py-2 bg-muted border border-border rounded-xl text-sm hover:bg-muted/80 transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+          </button>
+        </div>
       </div>
 
       {/* Content layout - two columns */}
@@ -228,26 +279,30 @@ export default function AdminInventoryPage() {
         <div className="space-y-3">
           <h3 className="font-serif text-lg font-bold">Recent Stock Updates</h3>
           <div className="rounded-xl border border-border bg-card p-4 space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
-            {logs.map((log) => (
-              <div key={log.id} className="flex items-start justify-between gap-3 text-xs border-b border-border pb-3 last:border-b-0 last:pb-0">
-                <div className="space-y-0.5">
-                  <p className="font-semibold">{log.itemName}</p>
-                  <p className="text-muted-foreground">{log.reason}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {new Date(log.createdAt).toLocaleTimeString()}
-                  </p>
+            {allLogs.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No stock updates yet</p>
+            ) : (
+              allLogs.map((log) => (
+                <div key={log.id} className="flex items-start justify-between gap-3 text-xs border-b border-border pb-3 last:border-b-0 last:pb-0">
+                  <div className="space-y-0.5">
+                    <p className="font-semibold">{log.itemName}</p>
+                    <p className="text-muted-foreground">{log.reason}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {new Date(log.createdAt).toLocaleTimeString()}
+                    </p>
+                  </div>
+                  <div className={cn(
+                    "font-mono font-bold flex items-center gap-0.5 px-2 py-0.5 rounded",
+                    log.change >= 0
+                      ? "bg-green-100 text-green-700 dark:bg-green-950/30"
+                      : "bg-red-100 text-red-700 dark:bg-red-950/30"
+                  )}>
+                    {log.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                    {log.change >= 0 ? `+${log.change}` : log.change}
+                  </div>
                 </div>
-                <div className={cn(
-                  "font-mono font-bold flex items-center gap-0.5 px-2 py-0.5 rounded",
-                  log.change >= 0
-                    ? "bg-green-100 text-green-700 dark:bg-green-950/30"
-                    : "bg-red-100 text-red-700 dark:bg-red-950/30"
-                )}>
-                  {log.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                  {log.change >= 0 ? `+${log.change}` : log.change}
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -311,8 +366,10 @@ export default function AdminInventoryPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2.5 bg-espresso text-cream rounded-xl text-sm font-semibold hover:bg-espresso-500 transition-colors"
+                    disabled={adjusting}
+                    className="flex-1 px-4 py-2.5 bg-espresso text-cream rounded-xl text-sm font-semibold hover:bg-espresso-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
+                    {adjusting && <Loader2 className="w-4 h-4 animate-spin" />}
                     Save Adjustment
                   </button>
                 </div>

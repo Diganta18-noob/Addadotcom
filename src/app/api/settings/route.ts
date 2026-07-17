@@ -1,41 +1,35 @@
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { apiHandler } from "@/lib/api-helpers";
+import { updateSettingsSchema } from "@/lib/validations";
 
-export async function GET() {
-  try {
-    const settings = await prisma.setting.findMany();
-    return NextResponse.json({ success: true, data: settings });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Failed to fetch settings" }, { status: 500 });
-  }
-}
+export const GET = apiHandler(async () => {
+  const settings = await prisma.setting.findMany();
+  return { data: settings };
+});
 
-export async function PUT(request: Request) {
-  try {
-    const body = await request.json();
-    // body is an array of { key, value }
-    if (Array.isArray(body)) {
-      for (const item of body) {
-        await prisma.setting.upsert({
-          where: { key: item.key },
-          update: { value: String(item.value) },
-          create: { key: item.key, value: String(item.value) },
-        });
-      }
-    } else {
-      // body is a single key/value object
-      for (const [key, value] of Object.entries(body)) {
-        await prisma.setting.upsert({
-          where: { key },
-          update: { value: String(value) },
-          create: { key, value: String(value) },
-        });
-      }
+export const PUT = apiHandler(async (request) => {
+  const body = await request.json();
+  const data = updateSettingsSchema.parse(body);
+
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      await prisma.setting.upsert({
+        where: { key: item.key },
+        update: { value: String(item.value) },
+        create: { key: item.key, value: String(item.value) },
+      });
     }
-
-    const updated = await prisma.setting.findMany();
-    return NextResponse.json({ success: true, data: updated });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Failed to update settings" }, { status: 500 });
+  } else {
+    // data is a Record<string, string>
+    for (const [key, value] of Object.entries(data)) {
+      await prisma.setting.upsert({
+        where: { key },
+        update: { value: String(value) },
+        create: { key, value: String(value) },
+      });
+    }
   }
-}
+
+  const updated = await prisma.setting.findMany();
+  return { data: updated };
+});

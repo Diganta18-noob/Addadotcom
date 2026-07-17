@@ -1,41 +1,42 @@
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { apiHandler } from "@/lib/api-helpers";
+import { createInventorySchema } from "@/lib/validations";
 
-export async function GET() {
-  try {
-    const items = await prisma.inventoryItem.findMany({
-      orderBy: { name: "asc" },
-    });
-    return NextResponse.json({ success: true, data: items });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Failed to fetch inventory" }, { status: 500 });
-  }
-}
+export const GET = apiHandler(async () => {
+  const items = await prisma.inventoryItem.findMany({
+    orderBy: { name: "asc" },
+    include: {
+      stockLogs: {
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      },
+    },
+  });
+  return { data: items };
+});
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const item = await prisma.inventoryItem.create({
+export const POST = apiHandler(async (request) => {
+  const body = await request.json();
+  const data = createInventorySchema.parse(body);
+
+  const item = await prisma.inventoryItem.create({
+    data: {
+      name: data.name,
+      unit: data.unit,
+      quantity: data.quantity,
+      lowStockThreshold: data.lowStockThreshold,
+    },
+  });
+
+  if (data.quantity > 0) {
+    await prisma.stockLog.create({
       data: {
-        name: body.name,
-        unit: body.unit,
-        quantity: parseFloat(body.quantity || 0),
-        lowStockThreshold: parseFloat(body.lowStockThreshold || 0),
+        inventoryItemId: item.id,
+        change: data.quantity,
+        reason: "Initial stock registration",
       },
     });
-
-    if (body.quantity) {
-      await prisma.stockLog.create({
-        data: {
-          inventoryItemId: item.id,
-          change: parseFloat(body.quantity),
-          reason: "Initial stock registration",
-        },
-      });
-    }
-
-    return NextResponse.json({ success: true, data: item }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Failed to create inventory item" }, { status: 500 });
   }
-}
+
+  return { data: item, status: 201 };
+});
