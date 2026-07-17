@@ -4,15 +4,10 @@ import { NextResponse } from "next/server";
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
-    const role = (token?.role as string) || "CUSTOMER";
+    const role = (token?.role as string) || "";
     const { pathname } = req.nextUrl;
 
-    // 1. Customers cannot access /admin routes -> redirect to /account
-    if (role === "CUSTOMER") {
-      return NextResponse.redirect(new URL("/account", req.url));
-    }
-
-    // 2. Sensitive routes -> Admin or Manager only
+    // 1. Restrict sensitive financial & report routes to ADMIN or MANAGER
     if (
       (pathname.startsWith("/admin/reports") || pathname.startsWith("/admin/billing")) &&
       role !== "ADMIN" &&
@@ -24,8 +19,13 @@ export default withAuth(
     return NextResponse.next();
   },
   {
+    secret: process.env.NEXTAUTH_SECRET,
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token }) => {
+        const role = (token?.role as string) || "";
+        // Only allow ADMIN, MANAGER, or STAFF roles into /admin
+        return role === "ADMIN" || role === "MANAGER" || role === "STAFF";
+      },
     },
     pages: {
       signIn: "/account",
