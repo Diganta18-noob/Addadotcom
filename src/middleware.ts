@@ -1,40 +1,37 @@
+import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/request";
-import { getToken } from "next-auth/jwt";
 
-export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+export default withAuth(
+  function middleware(req) {
+    const token = req.nextauth.token;
+    const role = (token?.role as string) || "CUSTOMER";
+    const { pathname } = req.nextUrl;
 
-  // Only protect /admin routes
-  if (pathname.startsWith("/admin")) {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-
-    // 1. Unauthenticated users -> redirect to auth/login
-    if (!token) {
-      const loginUrl = new URL("/api/auth/signin", req.url);
-      loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    const role = (token.role as string) || "CUSTOMER";
-
-    // 2. Customers -> 403 Forbidden
+    // 1. Customers cannot access /admin routes -> redirect to /account
     if (role === "CUSTOMER") {
-      const unauthorizedUrl = new URL("/", req.url);
-      return NextResponse.redirect(unauthorizedUrl);
+      return NextResponse.redirect(new URL("/account", req.url));
     }
 
-    // 3. Sensitive financial/reporting routes -> Admin or Manager only
-    if (pathname.startsWith("/admin/reports") || pathname.startsWith("/admin/billing")) {
-      if (role !== "ADMIN" && role !== "MANAGER") {
-        const forbiddenUrl = new URL("/admin/orders", req.url);
-        return NextResponse.redirect(forbiddenUrl);
-      }
+    // 2. Sensitive routes -> Admin or Manager only
+    if (
+      (pathname.startsWith("/admin/reports") || pathname.startsWith("/admin/billing")) &&
+      role !== "ADMIN" &&
+      role !== "MANAGER"
+    ) {
+      return NextResponse.redirect(new URL("/admin/orders", req.url));
     }
+
+    return NextResponse.next();
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token,
+    },
+    pages: {
+      signIn: "/account",
+    },
   }
-
-  return NextResponse.next();
-}
+);
 
 export const config = {
   matcher: ["/admin/:path*"],
