@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSession, signIn, signOut } from "next-auth/react";
+import { motion } from "framer-motion";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge, EmptyState } from "@/components/shared";
 import {
@@ -10,10 +12,9 @@ import {
   CalendarDays,
   Award,
   LogOut,
-  MapPin,
   RefreshCw,
-  Lock,
   ArrowRight,
+  ShieldAlert,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -46,22 +47,44 @@ const mockReservations: ResHistory[] = [
 ];
 
 export default function AccountPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
+
+  const { data: session, status } = useSession();
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
-  
-  // Profile settings
-  const [name, setName] = useState("Digan");
-  const [phone, setPhone] = useState("+91 98765 43210");
-  const [loyaltyPoints, setLoyaltyPoints] = useState(1435);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (emailInput && passwordInput) {
-      setIsLoggedIn(true);
-      toast.success("Successfully logged in!");
-    } else {
+    if (!emailInput || !passwordInput) {
       toast.error("Please enter email and password");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await signIn("credentials", {
+        email: emailInput,
+        password: passwordInput,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        toast.error("Invalid email or password");
+      } else {
+        toast.success("Successfully logged in!");
+        if (callbackUrl && callbackUrl !== "/") {
+          router.push(callbackUrl);
+        } else {
+          router.refresh();
+        }
+      }
+    } catch (err) {
+      toast.error("Sign in failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,7 +92,8 @@ export default function AccountPage() {
     toast.success(`Items from ${order.orderNumber} added to cart!`);
   };
 
-  if (!isLoggedIn) {
+  // 1. Unauthenticated or signed out state -> Show Sign In Form
+  if (status === "unauthenticated" || !session) {
     return (
       <div className="pt-24 pb-16 flex items-center justify-center min-h-[70vh] px-4">
         <motion.div
@@ -80,7 +104,7 @@ export default function AccountPage() {
           <div className="text-center">
             <h2 className="font-serif text-2xl font-bold">Welcome back</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Sign in to manage your orders, reservations & loyalty points
+              Sign in to manage orders, reservations & access Admin Panel
             </p>
           </div>
 
@@ -91,7 +115,7 @@ export default function AccountPage() {
                 type="email"
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="your@email.com"
+                placeholder="admin@addadotcom.cafe"
                 className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
                 required
               />
@@ -111,15 +135,29 @@ export default function AccountPage() {
 
             <button
               type="submit"
-              className="w-full py-2.5 bg-espresso text-cream rounded-xl text-sm font-semibold hover:bg-espresso-500 transition-colors flex items-center justify-center gap-1.5"
+              disabled={loading}
+              className="w-full py-2.5 bg-espresso text-cream rounded-xl text-sm font-semibold hover:bg-espresso-500 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
-              Sign In <ArrowRight className="w-4 h-4" />
+              {loading ? "Signing in..." : "Sign In"} <ArrowRight className="w-4 h-4" />
             </button>
           </form>
+
+          {/* Quick Admin Credentials Helper */}
+          <div className="p-3 bg-muted/40 border border-border rounded-xl text-xs text-muted-foreground space-y-1">
+            <p className="font-semibold text-foreground flex items-center gap-1">
+              <ShieldAlert className="w-3.5 h-3.5 text-caramel" /> Demo Admin Login Credentials:
+            </p>
+            <p>Email: <code className="bg-muted px-1 py-0.5 rounded text-foreground">admin@addadotcom.cafe</code></p>
+            <p>Password: <code className="bg-muted px-1 py-0.5 rounded text-foreground">admin123</code></p>
+          </div>
         </motion.div>
       </div>
     );
   }
+
+  // 2. Authenticated State
+  const user = session.user as any;
+  const isAdminOrStaff = user?.role === "ADMIN" || user?.role === "MANAGER" || user?.role === "STAFF";
 
   return (
     <div className="pt-24 pb-16 max-w-5xl mx-auto px-4 sm:px-6">
@@ -128,26 +166,38 @@ export default function AccountPage() {
         <div className="space-y-6">
           <div className="rounded-2xl border border-border bg-card p-6 text-center space-y-4">
             <div className="w-20 h-20 rounded-full bg-espresso text-cream flex items-center justify-center text-2xl font-bold mx-auto border-4 border-caramel/20">
-              D
+              {user?.name?.[0]?.toUpperCase() || "U"}
             </div>
             <div>
-              <h2 className="font-serif text-lg font-bold">{name}</h2>
-              <p className="text-xs text-muted-foreground">hello@addadotcom.cafe</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{phone}</p>
+              <h2 className="font-serif text-lg font-bold">{user?.name || "User"}</h2>
+              <p className="text-xs text-muted-foreground">{user?.email}</p>
+              <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-caramel/20 text-caramel">
+                {user?.role || "CUSTOMER"}
+              </span>
             </div>
+
+            {/* Admin Quick Action Button */}
+            {isAdminOrStaff && (
+              <button
+                onClick={() => router.push("/admin")}
+                className="w-full py-2 bg-caramel text-espresso rounded-xl text-xs font-bold hover:bg-caramel-300 transition-colors flex items-center justify-center gap-1.5"
+              >
+                Go to Admin Dashboard <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
 
             {/* Loyalty points banner */}
             <div className="p-4 rounded-xl bg-caramel/10 border border-caramel/20 flex items-center justify-center gap-3">
               <Award className="w-6 h-6 text-caramel flex-shrink-0" />
               <div className="text-left">
                 <p className="text-[10px] text-muted-foreground font-semibold uppercase">Loyalty Points</p>
-                <p className="font-serif font-bold text-lg text-caramel">{loyaltyPoints} pts</p>
+                <p className="font-serif font-bold text-lg text-caramel">1435 pts</p>
                 <p className="text-[9px] text-muted-foreground">Redeem points for meal discounts</p>
               </div>
             </div>
 
             <button
-              onClick={() => setIsLoggedIn(false)}
+              onClick={() => signOut({ callbackUrl: "/account" })}
               className="w-full py-2 border border-border rounded-xl text-xs font-semibold hover:bg-red-50 hover:text-red-500 transition-colors flex items-center justify-center gap-1.5"
             >
               <LogOut className="w-3.5 h-3.5" /> Sign Out
