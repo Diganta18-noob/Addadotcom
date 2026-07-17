@@ -18,11 +18,9 @@ export const GET = apiHandler(async (request) => {
     where.type = type;
   }
   if (today === "true") {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-    where.createdAt = { gte: start, lte: end };
+    // Use a 48-hour window to handle timezone differences (Vercel runs in UTC)
+    const start = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
+    where.createdAt = { gte: start };
   }
 
   const orders = await prisma.order.findMany({

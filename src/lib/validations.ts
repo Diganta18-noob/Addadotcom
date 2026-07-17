@@ -15,13 +15,14 @@ export const orderItemSchema = z.object({
 
 export const createOrderSchema = z.object({
   type: z.enum(["DINE_IN", "TAKEAWAY", "DELIVERY"]),
-  userId: z.string().optional(),
-  tableId: z.string().optional(),
-  reservationId: z.string().optional(),
-  deliveryAddress: z.string().max(300).optional(),
+  userId: z.string().optional().nullable(),
+  tableId: z.string().optional().nullable(),
+  tableNumber: z.union([z.string(), z.number()]).optional().nullable(),
+  reservationId: z.string().optional().nullable(),
+  deliveryAddress: z.string().max(300).optional().nullable(),
   deliveryFee: z.number().min(0).default(0),
-  pickupTime: z.string().optional(),
-  notes: z.string().max(500, "Notes cannot exceed 500 characters").optional(),
+  pickupTime: z.string().optional().nullable(),
+  notes: z.string().max(500, "Notes cannot exceed 500 characters").optional().nullable(),
   items: z.any(), // JSON array stored as-is
 });
 

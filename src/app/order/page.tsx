@@ -131,14 +131,15 @@ export default function OrderPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: orderType,
-          tableId: selectedTableObj?.id || undefined,
+          tableId: selectedTableObj?.id || null,
+          tableNumber: tableNumber || null,
           items: items.map((i) => ({
             menuItemId: i.menuItemId,
             menuItemName: i.menuItemName,
             qty: i.quantity,
             variant: i.variant,
-            addons: i.addons,
-            note: i.note,
+            addons: i.addons || [],
+            note: i.note || "",
             unitPrice: i.unitPrice,
             totalPrice: i.totalPrice,
           })),
@@ -152,16 +153,18 @@ export default function OrderPage() {
       const data = await res.json();
       if (data.success) {
         setOrderNumber(data.data.orderNumber);
+        setOrderPlaced(true);
+        clearCart();
+        toast.success("Order placed successfully!");
       } else {
-        setOrderNumber(generateOrderNumber());
+        console.error("Order API error:", data);
+        toast.error(data.message || "Failed to place order. Please try again.");
       }
-    } catch {
-      setOrderNumber(generateOrderNumber());
+    } catch (err) {
+      console.error("Order network error:", err);
+      toast.error("Network error. Please check your connection and try again.");
     } finally {
-      setOrderPlaced(true);
-      clearCart();
       setLoading(false);
-      toast.success("Order placed successfully!");
     }
   };
 
