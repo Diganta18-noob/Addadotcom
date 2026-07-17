@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { motion } from "framer-motion";
@@ -46,7 +46,7 @@ const mockReservations: ResHistory[] = [
   { id: "r2", date: "2026-07-02", timeSlot: "13:30", partySize: 2, status: "COMPLETED", bookingCode: "BK-P3O2N1" },
 ];
 
-export default function AccountPage() {
+function AccountContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
@@ -263,5 +263,13 @@ export default function AccountPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AccountPage() {
+  return (
+    <Suspense fallback={<div className="pt-24 text-center min-h-[50vh]">Loading account...</div>}>
+      <AccountContent />
+    </Suspense>
   );
 }

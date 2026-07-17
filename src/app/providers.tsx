@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
+import { SessionProvider } from "next-auth/react";
 import { Toaster } from "react-hot-toast";
 import { useUIStore } from "@/store";
 import { Navbar, MobileBottomBar, Footer } from "@/components/layout/Navbar";
@@ -12,13 +13,12 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith("/admin");
 
-  // Apply dark mode class on mount
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
 
   return (
-    <>
+    <SessionProvider>
       <Toaster
         position="top-right"
         toastOptions={{
@@ -39,6 +39,6 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
       </main>
       {!isAdmin && <Footer />}
       {!isAdmin && <MobileBottomBar />}
-    </>
+    </SessionProvider>
   );
 }
