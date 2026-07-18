@@ -50,7 +50,13 @@ export default function AdminReservationsPage() {
 
   const fetchReservations = useCallback(async () => {
     try {
-      const res = await fetch("/api/reservations");
+      const res = await fetch(`/api/reservations?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
+      });
       const data = await res.json();
       if (data.success) {
         setReservations(data.data);
@@ -64,7 +70,7 @@ export default function AdminReservationsPage() {
 
   useEffect(() => {
     fetchReservations();
-    const interval = setInterval(fetchReservations, 15000);
+    const interval = setInterval(fetchReservations, 3000);
     return () => clearInterval(interval);
   }, [fetchReservations]);
 

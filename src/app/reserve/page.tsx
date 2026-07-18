@@ -78,19 +78,16 @@ export default function ReservePage() {
 
       const data = await res.json();
 
-      if (data.success) {
+      if (data.success && data.data?.bookingCode) {
         setBookingCode(data.data.bookingCode);
         setStep("confirmation");
         toast.success("Reservation confirmed!");
       } else {
-        toast.error(data.error || "Failed to create reservation");
+        toast.error(data.message || data.error || "Failed to create reservation");
       }
-    } catch {
-      // Use demo booking code if API fails
-      const demoCode = generateBookingCode();
-      setBookingCode(demoCode);
-      setStep("confirmation");
-      toast.success("Reservation confirmed!");
+    } catch (err: any) {
+      console.error("Reservation submit error:", err);
+      toast.error("Network error. Please try again.");
     } finally {
       setLoading(false);
     }

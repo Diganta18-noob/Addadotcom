@@ -26,7 +26,7 @@ export const GET = apiHandler(async (request) => {
 
   const reservations = await prisma.reservation.findMany({
     where,
-    orderBy: [{ date: "asc" }, { timeSlot: "asc" }],
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     include: { table: true },
   });
 
@@ -39,7 +39,7 @@ export const POST = apiHandler(async (request) => {
 
   const bookingDate = new Date(data.date);
 
-  // Get suitable tables for party size
+  // Try to find a suitable table for party size if available
   const suitableTables = await prisma.cafeTable.findMany({
     where: {
       capacity: { gte: data.partySize },
@@ -59,10 +59,6 @@ export const POST = apiHandler(async (request) => {
   const bookedTableIds = existingReservations.map((r) => r.tableId).filter(Boolean);
   const availableTable = suitableTables.find((t) => !bookedTableIds.includes(t.id));
 
-  if (!availableTable) {
-    throw new ApiError(409, "NO_AVAILABILITY", "No tables available for this party size and time slot");
-  }
-
   const bookingCode = generateBookingCode();
 
   const reservation = await prisma.reservation.create({
@@ -75,7 +71,7 @@ export const POST = apiHandler(async (request) => {
       timeSlot: data.timeSlot,
       duration: data.duration || 90,
       partySize: data.partySize,
-      tableId: availableTable.id,
+      tableId: availableTable ? availableTable.id : null,
       status: "CONFIRMED",
       bookingCode,
       notes: data.notes || null,
@@ -83,11 +79,13 @@ export const POST = apiHandler(async (request) => {
     include: { table: true },
   });
 
-  // Update table status to RESERVED in the database
-  await prisma.cafeTable.update({
-    where: { id: availableTable.id },
-    data: { status: "RESERVED" },
-  });
+  // Update table status to RESERVED in the database if table is assigned
+  if (availableTable) {
+    await prisma.cafeTable.update({
+      where: { id: availableTable.id },
+      data: { status: "RESERVED" },
+    });
+  }
 
   return { data: reservation, status: 201 };
 });
