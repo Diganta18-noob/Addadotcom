@@ -38,7 +38,7 @@ export const createReservationSchema = z.object({
   userId: z.string().optional(),
   guestName: z.string().min(2, "Guest name must be at least 2 characters").max(100),
   guestEmail: z.string().email("Invalid email address").optional().or(z.literal("")),
-  guestPhone: z.string().min(10, "Phone number must be at least 10 digits").max(15),
+  guestPhone: z.string().min(7, "Phone number must be at least 7 digits").max(20),
   date: z.string().refine((val) => !isNaN(Date.parse(val)), "Invalid reservation date"),
   timeSlot: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Time slot must be HH:MM format (e.g. 19:00)"),
   duration: z.number().int().min(30).max(300).optional(),

@@ -55,8 +55,18 @@ export default function ReservePage() {
   });
 
   const handleSubmit = async () => {
-    if (!guestName || !guestPhone) {
+    if (!guestName.trim() || !guestPhone.trim()) {
       toast.error("Please fill in your name and phone number");
+      return;
+    }
+
+    if (guestPhone.trim().length < 7) {
+      toast.error("Please enter a valid phone number (at least 7 digits)");
+      return;
+    }
+
+    if (guestEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) {
+      toast.error("Please enter a valid email address (e.g. name@example.com)");
       return;
     }
 
@@ -66,13 +76,13 @@ export default function ReservePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          guestName,
-          guestEmail,
-          guestPhone,
+          guestName: guestName.trim(),
+          guestEmail: guestEmail.trim() || undefined,
+          guestPhone: guestPhone.trim(),
           date: selectedDate,
           timeSlot: selectedTime,
           partySize,
-          notes,
+          notes: notes.trim() || undefined,
         }),
       });
 
@@ -83,11 +93,14 @@ export default function ReservePage() {
         setStep("confirmation");
         toast.success("Reservation confirmed!");
       } else {
-        toast.error(data.message || data.error || "Failed to create reservation");
+        const errorMsg = data.errors
+          ? Object.values(data.errors as Record<string, string[]>).flat().join(". ")
+          : data.message || data.error || "Failed to create reservation";
+        toast.error(errorMsg);
       }
     } catch (err: any) {
       console.error("Reservation submit error:", err);
-      toast.error("Network error. Please try again.");
+      toast.error(err?.message || "Failed to submit reservation. Please try again.");
     } finally {
       setLoading(false);
     }
