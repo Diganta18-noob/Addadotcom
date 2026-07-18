@@ -63,8 +63,9 @@ export function apiHandler(handler: HandlerFn) {
 
       if (error instanceof ZodError) {
         const fieldErrors: Record<string, string[]> = {};
-        error.errors.forEach((err) => {
-          const path = err.path.join(".") || "form";
+        const issues = (error as any).issues || (error as any).errors || [];
+        issues.forEach((err: any) => {
+          const path = Array.isArray(err.path) ? err.path.join(".") : "form";
           if (!fieldErrors[path]) fieldErrors[path] = [];
           fieldErrors[path].push(err.message);
         });

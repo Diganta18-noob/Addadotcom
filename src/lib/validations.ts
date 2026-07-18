@@ -152,7 +152,7 @@ export const createInventorySchema = z.object({
 });
 
 export const adjustInventorySchema = z.object({
-  change: z.number({ required_error: "Change amount is required" }),
+  change: z.number(),
   reason: z.string().max(300).optional(),
 });
 

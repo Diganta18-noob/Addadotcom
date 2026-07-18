@@ -61,12 +61,16 @@ export default function OrderPage() {
     removeItem,
     updateQuantity,
     clearCart,
+    activeOrder,
+    setActiveOrder,
+    clearActiveOrder,
   } = useCartStore();
 
   const [promoInput, setPromoInput] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"ONLINE" | "COUNTER" | "COD">("ONLINE");
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
+  const [liveOrderStatus, setLiveOrderStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [realtimeTables, setRealtimeTables] = useState<any[]>([]);
   const [loadingTables, setLoadingTables] = useState(false);
@@ -85,6 +89,25 @@ export default function OrderPage() {
         .finally(() => setLoadingTables(false));
     }
   }, [orderType]);
+
+  // Sync live order status periodically if an active order exists
+  React.useEffect(() => {
+    const targetId = activeOrder?.id || activeOrder?.orderNumber;
+    if (targetId) {
+      const fetchStatus = async () => {
+        try {
+          const res = await fetch(`/api/orders/${targetId}`);
+          const data = await res.json();
+          if (data.success && data.data?.status) {
+            setLiveOrderStatus(data.data.status);
+          }
+        } catch (err) {}
+      };
+      fetchStatus();
+      const interval = setInterval(fetchStatus, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [activeOrder]);
 
   const subtotal = getSubtotal();
   const taxes = getTaxes();
@@ -152,7 +175,17 @@ export default function OrderPage() {
 
       const data = await res.json();
       if (data.success) {
-        setOrderNumber(data.data.orderNumber);
+        const created = data.data;
+        setOrderNumber(created.orderNumber);
+        setActiveOrder({
+          id: created.id,
+          orderNumber: created.orderNumber,
+          type: created.type,
+          status: created.status || "PLACED",
+          tableNumber: tableNumber || null,
+          total: created.total || total,
+          createdAt: created.createdAt,
+        });
         setOrderPlaced(true);
         clearCart();
         toast.success("Order placed successfully!");
@@ -168,7 +201,13 @@ export default function OrderPage() {
     }
   };
 
-  if (orderPlaced) {
+  const currentOrder = activeOrder || (orderPlaced ? { orderNumber, status: "PLACED", id: orderNumber } : null);
+  const currentStatus = liveOrderStatus || currentOrder?.status || "PLACED";
+
+  if (orderPlaced || (activeOrder && items.length === 0)) {
+    const displayOrderNum = currentOrder?.orderNumber || orderNumber;
+    const trackId = currentOrder?.id || displayOrderNum;
+
     return (
       <div className="pt-20 pb-24 lg:pb-12 min-h-screen flex items-center justify-center">
         <motion.div
@@ -179,52 +218,77 @@ export default function OrderPage() {
           <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
             <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
           </div>
-          <h1 className="font-serif text-3xl font-bold">Order Placed!</h1>
+          <h1 className="font-serif text-3xl font-bold">Active Order</h1>
           <p className="text-muted-foreground">
-            Your order has been placed successfully
+            Your order has been placed and is being prepared!
           </p>
 
           <div className="p-5 rounded-xl bg-caramel/10 border border-caramel/20">
-            <p className="text-sm text-muted-foreground mb-1">Order Number</p>
+            <p className="text-sm text-muted-foreground mb-1">Order Number / Code</p>
             <p className="font-mono text-2xl font-bold text-caramel tracking-wider">
-              {orderNumber}
+              {displayOrderNum}
             </p>
+            {activeOrder?.tableNumber && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Table Number: <span className="font-bold text-foreground">{activeOrder.tableNumber}</span>
+              </p>
+            )}
           </div>
 
           <div className="p-4 rounded-xl border border-border bg-card text-left space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground uppercase font-semibold">Status</span>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-caramel/10 text-caramel">
+                {currentStatus}
+              </span>
+            </div>
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-green-500 pulse-dot" />
-              <span className="text-sm font-medium">Order Placed</span>
+              <span className="text-sm font-medium">Order Received</span>
             </div>
-            <div className="ml-1.5 border-l-2 border-border pl-5 space-y-3 py-1">
-              <div className="flex items-center gap-3 text-muted-foreground">
+            <div className="ml-1.5 border-l-2 border-border pl-5 space-y-3 py-1 text-sm">
+              <div className={cn("flex items-center gap-3", ["ACCEPTED", "PREPARING", "READY", "SERVED", "COMPLETED"].includes(currentStatus) ? "text-foreground font-semibold" : "text-muted-foreground")}>
                 <div className="w-2 h-2 rounded-full bg-border" />
-                <span className="text-sm">Accepted by kitchen</span>
+                <span>Accepted by kitchen</span>
               </div>
-              <div className="flex items-center gap-3 text-muted-foreground">
+              <div className={cn("flex items-center gap-3", ["PREPARING", "READY", "SERVED", "COMPLETED"].includes(currentStatus) ? "text-foreground font-semibold" : "text-muted-foreground")}>
                 <div className="w-2 h-2 rounded-full bg-border" />
-                <span className="text-sm">Preparing your order</span>
+                <span>Preparing your order</span>
               </div>
-              <div className="flex items-center gap-3 text-muted-foreground">
+              <div className={cn("flex items-center gap-3", ["READY", "SERVED", "COMPLETED"].includes(currentStatus) ? "text-foreground font-semibold" : "text-muted-foreground")}>
                 <div className="w-2 h-2 rounded-full bg-border" />
-                <span className="text-sm">Ready for pickup</span>
+                <span>Ready for pickup / serve</span>
               </div>
             </div>
           </div>
 
-          <div className="flex gap-3">
-            <Link
-              href="/menu"
-              className="flex-1 px-5 py-3 border border-border rounded-xl text-sm font-medium hover:bg-muted transition-colors text-center"
-            >
-              Back to Menu
-            </Link>
-            <Link
-              href="/"
-              className="flex-1 px-5 py-3 bg-espresso text-cream rounded-xl text-sm font-medium hover:bg-espresso-500 transition-colors text-center"
-            >
-              Home
-            </Link>
+          <div className="space-y-3">
+            {trackId && (
+              <Link
+                href={`/track/${trackId}`}
+                className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-caramel text-espresso font-bold rounded-xl text-sm hover:bg-caramel-400 transition-colors"
+              >
+                Track Live Order Progress <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  clearActiveOrder();
+                  setOrderPlaced(false);
+                }}
+                className="flex-1 px-4 py-3 border border-border rounded-xl text-sm font-medium hover:bg-muted transition-colors text-center"
+              >
+                Place New Order
+              </button>
+              <Link
+                href="/menu"
+                className="flex-1 px-4 py-3 bg-espresso text-cream rounded-xl text-sm font-medium hover:bg-espresso-500 transition-colors text-center"
+              >
+                Browse Menu
+              </Link>
+            </div>
           </div>
         </motion.div>
       </div>

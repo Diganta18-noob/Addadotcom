@@ -2,6 +2,16 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartItem, CartItemAddon } from "@/types";
 
+export interface ActiveOrder {
+  id: string;
+  orderNumber: string;
+  type: "DINE_IN" | "TAKEAWAY" | "DELIVERY";
+  status: string;
+  tableNumber?: string | null;
+  total?: number;
+  createdAt?: string;
+}
+
 interface CartStore {
   items: CartItem[];
   orderType: "DINE_IN" | "TAKEAWAY" | "DELIVERY";
@@ -13,6 +23,7 @@ interface CartStore {
   promoCode: string;
   promoDiscount: number;
   tipAmount: number;
+  activeOrder: ActiveOrder | null;
 
   // Actions
   addItem: (item: Omit<CartItem, "id" | "totalPrice">) => void;
@@ -29,6 +40,8 @@ interface CartStore {
   setPromoCode: (code: string, discount: number) => void;
   clearPromo: () => void;
   setTipAmount: (amount: number) => void;
+  setActiveOrder: (order: ActiveOrder | null) => void;
+  clearActiveOrder: () => void;
 
   // Computed
   getSubtotal: () => number;
@@ -51,6 +64,7 @@ export const useCartStore = create<CartStore>()(
       promoCode: "",
       promoDiscount: 0,
       tipAmount: 0,
+      activeOrder: null,
 
       addItem: (item) => {
         const id = `${item.menuItemId}-${item.variant || "default"}-${item.addons.map(a => a.name).join(",")}`;
@@ -127,6 +141,8 @@ export const useCartStore = create<CartStore>()(
       setPromoCode: (code, discount) => set({ promoCode: code, promoDiscount: discount }),
       clearPromo: () => set({ promoCode: "", promoDiscount: 0 }),
       setTipAmount: (amount) => set({ tipAmount: amount }),
+      setActiveOrder: (order) => set({ activeOrder: order }),
+      clearActiveOrder: () => set({ activeOrder: null }),
 
       getSubtotal: () => {
         return get().items.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -177,6 +193,7 @@ export const useCartStore = create<CartStore>()(
         deliveryAddress: state.deliveryAddress,
         pickupTime: state.pickupTime,
         orderNotes: state.orderNotes,
+        activeOrder: state.activeOrder,
       }),
     }
   )
