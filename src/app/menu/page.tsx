@@ -170,15 +170,15 @@ function MenuCard({ item, onOpenDetail }: { item: MenuItemType; onOpenDetail: (i
 
 // ─── Item Detail Modal ──────────────────────────────────────
 
-function DetailModal({
+function ItemDetailModal({
   item,
   onClose,
-  onAddToCart,
 }: {
   item: MenuItemType;
   onClose: () => void;
-  onAddToCart: (item: MenuItemType, selectedVariant?: any, selectedAddons?: any[], note?: string) => void;
 }) {
+  const { addItem } = useCartStore();
+  const { openCart } = useUIStore();
   const defaultFallback = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80";
   const [modalImgSrc, setModalImgSrc] = useState(item.image || defaultFallback);
 
