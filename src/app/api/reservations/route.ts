@@ -3,6 +3,9 @@ import { generateBookingCode } from "@/lib/utils";
 import { apiHandler, ApiError } from "@/lib/api-helpers";
 import { createReservationSchema } from "@/lib/validations";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const GET = apiHandler(async (request) => {
   const { searchParams } = new URL(request.url);
   const date = searchParams.get("date");

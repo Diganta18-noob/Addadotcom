@@ -2,6 +2,9 @@ import prisma from "@/lib/prisma";
 import { apiHandler } from "@/lib/api-helpers";
 import { createInventorySchema } from "@/lib/validations";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const GET = apiHandler(async () => {
   const items = await prisma.inventoryItem.findMany({
     orderBy: { name: "asc" },

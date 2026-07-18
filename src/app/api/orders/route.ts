@@ -3,6 +3,9 @@ import { generateOrderNumber } from "@/lib/utils";
 import { apiHandler, ApiError } from "@/lib/api-helpers";
 import { createOrderSchema, updateOrderSchema } from "@/lib/validations";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const GET = apiHandler(async (request) => {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");

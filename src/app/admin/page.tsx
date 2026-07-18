@@ -44,10 +44,17 @@ interface DashboardStats {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchDashboardStats = useCallback(async () => {
     try {
-      const res = await fetch("/api/dashboard");
+      const res = await fetch(`/api/dashboard?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
+      });
       const data = await res.json();
       if (data.success) {
         setStats(data.data);
@@ -56,6 +63,7 @@ export default function AdminDashboard() {
       console.error("Failed to fetch dashboard stats:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -109,10 +117,14 @@ export default function AdminDashboard() {
       <div className="flex justify-between items-center">
         <h2 className="font-serif text-2xl font-bold">Admin Dashboard</h2>
         <button
-          onClick={() => { setLoading(true); fetchDashboardStats(); }}
-          className="px-3 py-2 bg-muted border border-border rounded-lg text-sm hover:bg-muted/80 transition-colors flex items-center gap-2"
+          onClick={() => {
+            setRefreshing(true);
+            fetchDashboardStats();
+          }}
+          disabled={refreshing || (loading && !stats)}
+          className="px-3 py-2 bg-muted border border-border rounded-lg text-sm hover:bg-muted/80 transition-colors flex items-center gap-2 disabled:opacity-50"
         >
-          <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+          <RefreshCw className={cn("w-4 h-4", (refreshing || loading) && "animate-spin")} />
           <span>Refresh stats</span>
         </button>
       </div>
