@@ -62,12 +62,19 @@ const demoItems: MenuItemType[] = [
 
   // Specials
   { id: "m22", categoryId: "cat-5", name: "Chef's Lamb Burger", slug: "chefs-lamb-burger", description: "Spiced lamb patty, caramelized onions, aged cheddar, truffle aioli, brioche bun", price: 529, image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&q=80", tags: ["NON_VEG", "SPICY"], isAvailable: true, prepTime: 20, sortOrder: 0, isSpecial: true, isBestseller: false, variants: [], addons: [{ name: "Fries", price: 80 }, { name: "Onion Rings", price: 70 }], recipe: [], createdAt: "", updatedAt: "" },
-  { id: "m23", categoryId: "cat-5", name: "Saffron Risotto", slug: "saffron-risotto", description: "Arborio rice slow-cooked with saffron, white wine, parmesan, and grilled asparagus", price: 499, image: "https://images.unsplash.com/photo-1633964913295-ceb43826e7c1?w=600&q=80", tags: ["VEG", "GLUTEN_FREE"], isAvailable: true, prepTime: 25, sortOrder: 1, isSpecial: true, isBestseller: false, variants: [], addons: [{ name: "Grilled Prawns", price: 150 }], recipe: [], createdAt: "", updatedAt: "" },
+  { id: "m23", categoryId: "cat-5", name: "Saffron Risotto", slug: "saffron-risotto", description: "Arborio rice slow-cooked with saffron, white wine, parmesan, and grilled asparagus", price: 499, image: "https://images.unsplash.com/photo-1595295333158-4742f28fbd85?w=600&q=80", tags: ["VEG", "GLUTEN_FREE"], isAvailable: true, prepTime: 25, sortOrder: 1, isSpecial: true, isBestseller: false, variants: [], addons: [{ name: "Grilled Prawns", price: 150 }], recipe: [], createdAt: "", updatedAt: "" },
 ];
 
 // ─── Menu Card Component ────────────────────────────────────
 
 function MenuCard({ item, onOpenDetail }: { item: MenuItemType; onOpenDetail: (item: MenuItemType) => void }) {
+  const defaultFallback = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80";
+  const [imgSrc, setImgSrc] = useState(item.image || defaultFallback);
+
+  useEffect(() => {
+    setImgSrc(item.image || defaultFallback);
+  }, [item.image]);
+
   return (
     <motion.div
       layout
@@ -82,7 +89,8 @@ function MenuCard({ item, onOpenDetail }: { item: MenuItemType; onOpenDetail: (i
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden">
         <Image
-          src={item.image || "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80"}
+          src={imgSrc}
+          onError={() => setImgSrc(defaultFallback)}
           alt={item.name}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -162,15 +170,21 @@ function MenuCard({ item, onOpenDetail }: { item: MenuItemType; onOpenDetail: (i
 
 // ─── Item Detail Modal ──────────────────────────────────────
 
-function ItemDetailModal({
+function DetailModal({
   item,
   onClose,
+  onAddToCart,
 }: {
   item: MenuItemType;
   onClose: () => void;
+  onAddToCart: (item: MenuItemType, selectedVariant?: any, selectedAddons?: any[], note?: string) => void;
 }) {
-  const { addItem } = useCartStore();
-  const { openCart } = useUIStore();
+  const defaultFallback = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80";
+  const [modalImgSrc, setModalImgSrc] = useState(item.image || defaultFallback);
+
+  useEffect(() => {
+    setModalImgSrc(item.image || defaultFallback);
+  }, [item.image]);
 
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
@@ -248,7 +262,8 @@ function ItemDetailModal({
         {/* Image */}
         <div className="relative aspect-video flex-shrink-0">
           <Image
-            src={item.image || "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80"}
+            src={modalImgSrc}
+            onError={() => setModalImgSrc(defaultFallback)}
             alt={item.name}
             fill
             sizes="(max-width: 768px) 100vw, 512px"

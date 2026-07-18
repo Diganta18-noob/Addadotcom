@@ -345,7 +345,7 @@ async function main() {
       slug: "saffron-risotto",
       description: "Arborio rice slow-cooked with saffron, white wine, parmesan",
       price: 499,
-      image: "https://images.unsplash.com/photo-1633964913295-ceb43826e7c1?w=600&q=80",
+      image: "https://images.unsplash.com/photo-1595295333158-4742f28fbd85?w=600&q=80",
       tags: ["VEG", "GLUTEN_FREE"],
       isAvailable: true,
       prepTime: 25,
