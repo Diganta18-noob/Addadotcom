@@ -1,0 +1,87 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "AddaDotCom Café & Restaurant Enterprise API",
+    "description": "Production-ready REST API specifications for AddaDotCom Café System.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Register a new user",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password"],
+                "properties": {
+                  "name": { "type": "string", "example": "John Doe" },
+                  "email": { "type": "string", "example": "john@example.com" },
+                  "password": { "type": "string", "example": "secret123" },
+                  "phone": { "type": "string", "example": "9876543210" },
+                  "role": { "type": "string", "enum": ["CUSTOMER", "STAFF", "MANAGER", "ADMIN"], "default": "CUSTOMER" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User created successfully" },
+          "400": { "description": "Validation error" },
+          "409": { "description": "User already exists" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login user and issue JWT token pair",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "example": "admin@addadotcom.cafe" },
+                  "password": { "type": "string", "example": "admin123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful, refresh token set in HttpOnly cookie" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/menu": {
+      "get": {
+        "summary": "Fetch menu items with search, filter, and pagination",
+        "tags": ["Menu"],
+        "parameters": [
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "category", "in": "query", "schema": { "type": "string" } },
+          { "name": "priceMin", "in": "query", "schema": { "type": "number" } },
+          { "name": "priceMax", "in": "query", "schema": { "type": "number" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 12 } }
+        ],
+        "responses": {
+          "200": { "description": "Menu items list with pagination metadata" }
+        }
+      }
+    }
+  }
+}

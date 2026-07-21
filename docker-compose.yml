@@ -1,18 +1,49 @@
 version: '3.8'
 
 services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/addadotcom?schema=public
+      - REDIS_URL=redis://redis:6379
+      - NEXTAUTH_SECRET=addadotcom_enterprise_secret_2026
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: always
+
   postgres:
     image: postgres:16-alpine
-    container_name: addadotcom-db
-    restart: unless-stopped
     ports:
-      - '5432:5432'
+      - "5432:5432"
     environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: addadotcom
-      POSTGRES_USER: addadotcom
-      POSTGRES_PASSWORD: addadotcom_dev_2024
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d addadotcom"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
 
 volumes:
-  pgdata:
+  postgres_data:
+  redis_data:
