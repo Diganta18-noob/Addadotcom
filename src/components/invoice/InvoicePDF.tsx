@@ -7,7 +7,7 @@ import { InvoiceData } from "./InvoiceDocument";
 
 const styles = StyleSheet.create({
   page: {
-    padding: 30,
+    padding: 24,
     fontSize: 9,
     fontFamily: "Helvetica",
     color: "#1F2937",
@@ -19,11 +19,11 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     borderBottomWidth: 1.5,
     borderBottomColor: "#D4A056",
-    paddingBottom: 12,
-    marginBottom: 15,
+    paddingBottom: 10,
+    marginBottom: 12,
   },
   brandTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: "Helvetica-Bold",
     color: "#4B2E2B",
     marginBottom: 2,
@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     borderColor: "#D4A056",
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: 10,
     alignSelf: "flex-end",
     marginBottom: 4,
   },
@@ -65,9 +65,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#F9FAFB",
     borderWidth: 1,
     borderColor: "#E5E7EB",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
+    borderRadius: 6,
+    padding: 8,
+    marginBottom: 12,
   },
   infoCol: {
     flex: 1,
@@ -77,20 +77,20 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     color: "#6B7280",
     textTransform: "uppercase",
-    marginBottom: 3,
+    marginBottom: 2,
   },
   cardValue: {
-    fontSize: 9,
+    fontSize: 8.5,
     fontFamily: "Helvetica-Bold",
     color: "#111827",
   },
   cardSub: {
-    fontSize: 8,
+    fontSize: 7.5,
     color: "#4B2E2B",
   },
   table: {
     width: "100%",
-    marginBottom: 15,
+    marginBottom: 12,
   },
   tableHeader: {
     flexDirection: "row",
@@ -110,16 +110,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     borderBottomWidth: 1,
     borderBottomColor: "#F3F4F6",
-    paddingVertical: 6,
+    paddingVertical: 5,
     paddingHorizontal: 6,
   },
-  colNo: { width: "6%" },
-  colDesc: { width: "54%" },
-  colQty: { width: "10%", textAlign: "center" },
-  colPrice: { width: "15%", textAlign: "right" },
-  colTotal: { width: "15%", textAlign: "right" },
+  colNo: { width: 22 },
+  colDesc: { flex: 1 },
+  colQty: { width: 35, textAlign: "center" },
+  colPrice: { width: 60, textAlign: "right" },
+  colTotal: { width: 65, textAlign: "right" },
   itemName: {
-    fontSize: 9,
+    fontSize: 8.5,
     fontFamily: "Helvetica-Bold",
     color: "#111827",
   },
@@ -130,20 +130,23 @@ const styles = StyleSheet.create({
   totalsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 15,
+    marginBottom: 12,
   },
   gstSummary: {
-    width: "55%",
+    width: "50%",
   },
   totalsBox: {
-    width: "40%",
+    width: "45%",
   },
   totalsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 3,
+    marginBottom: 2.5,
     fontSize: 8,
     color: "#4B2E2B",
+  },
+  discountText: {
+    color: "#059669",
   },
   grandTotalRow: {
     flexDirection: "row",
@@ -151,24 +154,24 @@ const styles = StyleSheet.create({
     backgroundColor: "#FDF8F0",
     borderWidth: 1,
     borderColor: "#D4A056",
-    borderRadius: 6,
-    padding: 6,
+    borderRadius: 5,
+    padding: 5,
     marginTop: 4,
     marginBottom: 4,
   },
   grandTotalText: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: "Helvetica-Bold",
     color: "#4B2E2B",
   },
   footer: {
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
-    paddingTop: 10,
+    paddingTop: 8,
     textAlign: "center",
   },
   footerTitle: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
     color: "#4B2E2B",
     marginBottom: 2,
@@ -183,8 +186,18 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoiceData }) {
   const { cafeDetails, customerDetails, financials, items } = invoice;
   const subtotal = financials.subtotal || 0;
   const serviceCharge = financials.serviceCharge || 0;
-  const cgst = Math.round(subtotal * 0.025 * 100) / 100;
-  const sgst = Math.round(subtotal * 0.025 * 100) / 100;
+  const discounts = Array.isArray(financials.discounts) ? financials.discounts : [];
+  const discountTotal = discounts.reduce((sum, d) => sum + (d.amount || 0), 0);
+
+  // Extract taxes from financials.taxes array or compute with discount subtraction
+  const cgstTax = financials.taxes?.find((t) => t.name?.toUpperCase().includes("CGST")) || {
+    name: "CGST (2.5%)",
+    amount: Math.round((subtotal - discountTotal + serviceCharge) * 0.025 * 100) / 100,
+  };
+  const sgstTax = financials.taxes?.find((t) => t.name?.toUpperCase().includes("SGST")) || {
+    name: "SGST (2.5%)",
+    amount: cgstTax.amount,
+  };
 
   return (
     <Document title={`Invoice-${invoice.invoiceNumber}`}>
@@ -268,12 +281,12 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoiceData }) {
           ))}
         </View>
 
-        {/* Totals Section */}
-        <View style={styles.totalsContainer}>
+        {/* Totals Section (Prevent Page Split) */}
+        <View wrap={false} style={styles.totalsContainer}>
           <View style={styles.gstSummary}>
             <Text style={styles.cardTitle}>Statutory GST Summary (SAC: 996331)</Text>
-            <Text style={styles.footerText}>CGST (2.5%): ₹{cgst.toFixed(2)}</Text>
-            <Text style={styles.footerText}>SGST (2.5%): ₹{sgst.toFixed(2)}</Text>
+            <Text style={styles.footerText}>CGST (2.5%): ₹{cgstTax.amount.toFixed(2)}</Text>
+            <Text style={styles.footerText}>SGST (2.5%): ₹{sgstTax.amount.toFixed(2)}</Text>
           </View>
 
           <View style={styles.totalsBox}>
@@ -281,19 +294,28 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoiceData }) {
               <Text>Subtotal</Text>
               <Text>₹{subtotal.toFixed(2)}</Text>
             </View>
+
+            {discounts.map((d, i) => (
+              <View key={i} style={[styles.totalsRow, styles.discountText]}>
+                <Text>{d.label || "Discount"}</Text>
+                <Text>-₹{(d.amount || 0).toFixed(2)}</Text>
+              </View>
+            ))}
+
             {serviceCharge > 0 && (
               <View style={styles.totalsRow}>
                 <Text>Service Charge (5%)</Text>
                 <Text>₹{serviceCharge.toFixed(2)}</Text>
               </View>
             )}
+
             <View style={styles.totalsRow}>
               <Text>CGST (2.5%)</Text>
-              <Text>₹{cgst.toFixed(2)}</Text>
+              <Text>₹{cgstTax.amount.toFixed(2)}</Text>
             </View>
             <View style={styles.totalsRow}>
               <Text>SGST (2.5%)</Text>
-              <Text>₹{sgst.toFixed(2)}</Text>
+              <Text>₹{sgstTax.amount.toFixed(2)}</Text>
             </View>
 
             <View style={styles.grandTotalRow}>
@@ -304,7 +326,7 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoiceData }) {
         </View>
 
         {/* Footer */}
-        <View style={styles.footer}>
+        <View minPresenceAhead={40} style={styles.footer}>
           <Text style={styles.footerTitle}>Thank You for Dining with Us!</Text>
           <Text style={styles.footerText}>
             Bills once printed cannot be modified. Visit us online at www.addadotcom.cafe

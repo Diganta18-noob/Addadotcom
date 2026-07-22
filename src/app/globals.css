@@ -152,24 +152,41 @@
 }
 
 @media print {
-  /* Hide all non-invoice elements */
-  [data-print-hide],
-  .print\:hidden {
+  /* Hide admin navigation chrome & headers not part of invoice */
+  aside, nav, [data-sidebar], [data-topbar],
+  header:not([data-invoice-header]) {
     display: none !important;
   }
 
-  /* Admin shell */
-  aside, nav, header, [data-sidebar], [data-topbar] {
-    display: none !important;
-  }
-
-  /* Modal overlay & backdrop */
-  .fixed.inset-0.bg-black\/60,
-  .backdrop-blur-sm {
+  /* Hide backdrop overlay & blur elements */
+  [class*="backdrop-blur"],
+  [class*="bg-black"] {
     background: transparent !important;
+    backdrop-filter: none !important;
   }
 
-  /* Only the invoice container prints */
+  /* Reset modal container positioning & sizing */
+  [role="dialog"] {
+    position: static !important;
+    inset: auto !important;
+    background: white !important;
+    border: none !important;
+    box-shadow: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Reset Next.js page main content margins */
+  main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Invoice container takes full A4 page */
   [data-invoice-print] {
     position: static !important;
     width: 100% !important;
@@ -179,17 +196,28 @@
     box-shadow: none !important;
     border: none !important;
     padding: 0 !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
   }
 
+  /* @page with clean margins suppresses browser URL/date headers */
   @page {
     size: A4 portrait;
-    margin: 12mm 14mm;
+    margin: 10mm 12mm;
   }
+
+  /* Hide everything marked print:hidden */
+  .print\:hidden { display: none !important; }
 
   body {
     background: white !important;
     color: black !important;
+    margin: 0 !important;
+  }
+
+  /* Prevent page breaks inside key invoice sections */
+  [data-invoice-print] > * {
+    break-inside: avoid;
   }
 }
+
 

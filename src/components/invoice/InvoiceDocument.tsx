@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { InvoiceHeader, CafeDetails } from "./InvoiceHeader";
 import { InvoiceCustomerInfo, CustomerDetails } from "./InvoiceCustomerInfo";
 import { InvoiceItemsTable, InvoiceItem } from "./InvoiceItemsTable";
@@ -33,6 +33,14 @@ export interface InvoiceDocumentProps {
 }
 
 export function InvoiceDocument({ invoice, className = "" }: InvoiceDocumentProps) {
+  const [origin, setOrigin] = useState("https://addadotcom.vercel.app");
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location?.origin) {
+      setOrigin(window.location.origin);
+    }
+  }, []);
+
   const isPaid = invoice.paymentStatus?.toUpperCase() === "PAID";
 
   // Simple deterministic hash for invoice verification code
@@ -101,6 +109,7 @@ export function InvoiceDocument({ invoice, className = "" }: InvoiceDocumentProp
         <InvoiceFooter
           loyaltyPoints={invoice.loyaltyPoints || 25}
           invoiceNumber={invoice.invoiceNumber}
+          invoiceBaseUrl={origin}
         />
       </div>
 

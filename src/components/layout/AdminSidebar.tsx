@@ -45,6 +45,7 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
 
   return (
     <aside
+      data-sidebar="true"
       className={cn(
         "fixed left-0 top-0 bottom-0 z-30 bg-espresso text-cream-100 flex flex-col transition-all duration-300",
         collapsed ? "w-16" : "w-64"
@@ -135,6 +136,7 @@ export function AdminTopbar({ sidebarCollapsed }: AdminTopbarProps) {
 
   return (
     <header
+      data-topbar="true"
       className={cn(
         "fixed top-0 right-0 z-20 h-16 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-4 sm:px-6 transition-all duration-300",
         sidebarCollapsed ? "left-16" : "left-64"

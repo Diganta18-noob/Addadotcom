@@ -2,11 +2,13 @@
 
 import React from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Sparkles, Heart, Coffee, Globe, PhoneCall } from "lucide-react";
+import { Sparkles, Coffee, Globe, PhoneCall, Copy } from "lucide-react";
+import toast from "react-hot-toast";
 
 export interface InvoiceFooterProps {
   loyaltyPoints?: number;
   invoiceNumber: string;
+  invoiceBaseUrl?: string;
   websiteUrl?: string;
   supportPhone?: string;
   termsText?: string;
@@ -15,11 +17,21 @@ export interface InvoiceFooterProps {
 export function InvoiceFooter({
   loyaltyPoints = 0,
   invoiceNumber,
+  invoiceBaseUrl,
   websiteUrl = "www.addadotcom.cafe",
   supportPhone = "+91 98765 43210",
   termsText = "Bills once printed cannot be modified. Subject to local jurisdiction. E. & O.E.",
 }: InvoiceFooterProps) {
-  const qrUrl = `https://addadotcom.cafe/invoice/${invoiceNumber}`;
+  const qrUrl = `${invoiceBaseUrl || "https://addadotcom.vercel.app"}/invoice/${invoiceNumber}`;
+
+  const handleCopyLink = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard
+        .writeText(qrUrl)
+        .then(() => toast.success("Invoice link copied!"))
+        .catch(() => toast.error("Failed to copy link"));
+    }
+  };
 
   return (
     <div className="space-y-4 pt-4 border-t border-dashed border-caramel/40 text-center font-sans">
@@ -44,15 +56,26 @@ export function InvoiceFooter({
       </div>
 
       {/* QR Code & Digital Receipt Link */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 py-2 bg-muted/20 border border-border/60 rounded-xl p-3 max-w-md mx-auto">
-        <div className="bg-white p-1.5 rounded-lg border border-border/80 shadow-xs shrink-0">
+      <div
+        aria-label="QR code for digital invoice receipt"
+        className="flex flex-col sm:flex-row items-center justify-center gap-4 py-2 bg-muted/20 border border-border/60 rounded-xl p-3 max-w-md mx-auto print:bg-white print:border-gray-200"
+      >
+        <div className="bg-white p-1.5 rounded-lg border border-border/80 shadow-xs shrink-0 print:border-gray-300">
           <QRCodeSVG value={qrUrl} size={72} level="M" />
         </div>
         <div className="text-left text-xs space-y-0.5 max-w-xs">
           <p className="font-bold text-foreground">Scan for Digital Receipt</p>
           <p className="text-muted-foreground text-[11px]">
-            Scan with any camera app to view, download, or share your itemized e-receipt & leave feedback.
+            Scan with any camera app to view your itemized e-receipt & leave feedback online.
           </p>
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className="inline-flex items-center gap-1 text-[10px] font-semibold text-caramel hover:text-caramel-300 underline transition-colors pt-0.5 print:hidden cursor-pointer"
+          >
+            <Copy className="w-3 h-3" />
+            Copy invoice link
+          </button>
         </div>
       </div>
 
