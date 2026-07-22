@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, Suspense } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { motion } from "framer-motion";
@@ -178,12 +179,12 @@ function AccountContent() {
 
             {/* Admin Quick Action Button */}
             {isAdminOrStaff && (
-              <button
-                onClick={() => router.push("/admin")}
+              <Link
+                href="/admin"
                 className="w-full py-2 bg-caramel text-espresso rounded-xl text-xs font-bold hover:bg-caramel-300 transition-colors flex items-center justify-center gap-1.5"
               >
                 Go to Admin Dashboard <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              </Link>
             )}
 
             {/* Loyalty points banner */}

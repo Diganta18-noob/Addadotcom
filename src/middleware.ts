@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const secret = process.env.NEXTAUTH_SECRET || "addadotcom-secret-key-2026-super-secure-jwt";
+  const token = await getToken({ req, secret });
   const { pathname } = req.nextUrl;
 
   if (pathname.startsWith("/admin")) {
