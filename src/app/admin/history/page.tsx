@@ -22,7 +22,9 @@ import {
 } from "lucide-react";
 import { cn, formatCurrency, formatDate, formatTime } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared";
+import { InvoiceModal } from "@/components/invoice/InvoiceModal";
 import toast from "react-hot-toast";
+
 
 interface OrderHistoryItem {
   id: string;
@@ -41,29 +43,7 @@ interface OrderHistoryItem {
   createdAt: string;
 }
 
-interface InvoiceDetail {
-  invoiceNumber: string;
-  orderNumber: string;
-  orderId: string;
-  transactionId: string;
-  createdAt: string;
-  type: string;
-  status: string;
-  paymentStatus: string;
-  paymentMethod: string;
-  staffName: string;
-  tableNumber: number | null;
-  customerDetails: { name: string; email: string; phone: string };
-  cafeDetails: { name: string; address: string; phone: string; email: string; gstin: string };
-  items: any[];
-  financials: {
-    subtotal: number;
-    serviceCharge: number;
-    deliveryFee: number;
-    taxes: { name: string; rate: number; amount: number }[];
-    total: number;
-  };
-}
+
 
 export default function AdminOrderHistoryPage() {
   const [search, setSearch] = useState("");
@@ -83,8 +63,6 @@ export default function AdminOrderHistoryPage() {
 
   // Invoice Modal State
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
-  const [loadingInvoice, setLoadingInvoice] = useState(false);
 
   // Debounce search input
   useEffect(() => {
@@ -160,24 +138,11 @@ export default function AdminOrderHistoryPage() {
     fetchHistory();
   }, [fetchHistory]);
 
-  // Fetch Invoice Details for Modal
-  const openInvoiceModal = async (orderId: string) => {
+  // Open Invoice Modal
+  const openInvoiceModal = (orderId: string) => {
     setSelectedOrderId(orderId);
-    setLoadingInvoice(true);
-    try {
-      const res = await fetch(`/api/orders/${orderId}/invoice`);
-      const data = await res.json();
-      if (data.success) {
-        setInvoice(data.data);
-      } else {
-        toast.error("Invoice not available");
-      }
-    } catch (err) {
-      toast.error("Failed to load invoice");
-    } finally {
-      setLoadingInvoice(false);
-    }
   };
+
 
   // CSV Export Trigger
   const handleExportCSV = () => {
@@ -464,134 +429,12 @@ export default function AdminOrderHistoryPage() {
         )}
       </div>
 
-      {/* Invoice Drawer Modal */}
-      <AnimatePresence>
-        {selectedOrderId && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 print:p-0 print:bg-white print:static"
-          >
-            <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              className="bg-card border border-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 relative print:border-none print:shadow-none print:max-h-none print:p-0"
-            >
-              {/* Close Button (hidden on print) */}
-              <button
-                onClick={() => {
-                  setSelectedOrderId(null);
-                  setInvoice(null);
-                }}
-                className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted transition-colors print:hidden"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              {loadingInvoice || !invoice ? (
-                <div className="py-20 text-center space-y-3">
-                  <Loader2 className="w-8 h-8 animate-spin text-caramel mx-auto" />
-                  <p className="text-sm font-semibold text-muted-foreground">Generating Tax Invoice...</p>
-                </div>
-              ) : (
-                <div className="space-y-6 text-foreground print:space-y-4">
-                  {/* Printable Header */}
-                  <div className="flex justify-between items-start border-b border-border pb-4">
-                    <div>
-                      <h2 className="font-serif text-xl font-bold text-caramel">{invoice.cafeDetails.name}</h2>
-                      <p className="text-xs text-muted-foreground">{invoice.cafeDetails.address}</p>
-                      <p className="text-xs text-muted-foreground">GSTIN: {invoice.cafeDetails.gstin} | Ph: {invoice.cafeDetails.phone}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="px-3 py-1 bg-caramel/10 text-caramel font-serif font-bold text-sm rounded-full inline-block">
-                        TAX INVOICE
-                      </span>
-                      <p className="text-xs font-mono font-bold mt-1">{invoice.invoiceNumber}</p>
-                      <p className="text-[10px] text-muted-foreground">{formatDate(invoice.createdAt)} {formatTime(invoice.createdAt)}</p>
-                    </div>
-                  </div>
-
-                  {/* Customer & Order Metadata */}
-                  <div className="grid grid-cols-2 gap-4 text-xs bg-muted/40 p-3 rounded-xl border border-border/60">
-                    <div>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Customer</p>
-                      <p className="font-semibold">{invoice.customerDetails.name}</p>
-                      <p className="text-muted-foreground">{invoice.customerDetails.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Order Details</p>
-                      <p className="font-semibold">Order #: {invoice.orderNumber}</p>
-                      <p className="text-muted-foreground">Type: {invoice.type} {invoice.tableNumber ? `(Table ${invoice.tableNumber})` : ""}</p>
-                    </div>
-                  </div>
-
-                  {/* Items List */}
-                  <table className="w-full text-xs text-left">
-                    <thead className="border-b border-border font-semibold text-muted-foreground uppercase text-[10px]">
-                      <tr>
-                        <th className="py-2">Item Description</th>
-                        <th className="py-2 text-center">Qty</th>
-                        <th className="py-2 text-right">Price</th>
-                        <th className="py-2 text-right">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/40">
-                      {invoice.items.map((item: any, idx: number) => (
-                        <tr key={idx}>
-                          <td className="py-2.5 font-medium">{item.menuItemName || item.menuItemId}</td>
-                          <td className="py-2.5 text-center">{item.qty || 1}</td>
-                          <td className="py-2.5 text-right">{formatCurrency(item.unitPrice || 0)}</td>
-                          <td className="py-2.5 text-right font-semibold">{formatCurrency(item.totalPrice || (item.unitPrice * (item.qty || 1)))}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  {/* Financial Breakdown */}
-                  <div className="border-t border-border pt-4 text-xs space-y-1.5 max-w-xs ml-auto">
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Subtotal</span>
-                      <span>{formatCurrency(invoice.financials.subtotal)}</span>
-                    </div>
-                    {invoice.financials.serviceCharge > 0 && (
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>Service Charge</span>
-                        <span>{formatCurrency(invoice.financials.serviceCharge)}</span>
-                      </div>
-                    )}
-                    {invoice.financials.taxes.map((t: any, i: number) => (
-                      <div key={i} className="flex justify-between text-muted-foreground">
-                        <span>{t.name} ({t.rate}%)</span>
-                        <span>{formatCurrency(t.amount)}</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between font-serif font-bold text-lg text-foreground border-t border-border pt-2">
-                      <span>Total Amount</span>
-                      <span className="text-caramel">{formatCurrency(invoice.financials.total)}</span>
-                    </div>
-                    <p className="text-[10px] text-right text-muted-foreground">
-                      Paid via {invoice.paymentMethod} • Txn ID: {invoice.transactionId}
-                    </p>
-                  </div>
-
-                  {/* Print Actions (hidden on print) */}
-                  <div className="flex items-center justify-between border-t border-border pt-4 print:hidden">
-                    <span className="text-xs text-muted-foreground">Staff Cashier: {invoice.staffName}</span>
-                    <button
-                      onClick={() => window.print()}
-                      className="px-5 py-2.5 bg-caramel text-espresso rounded-xl text-xs font-bold hover:bg-caramel-300 transition-colors flex items-center gap-2 shadow-md"
-                    >
-                      <Printer className="w-4 h-4" /> Print Tax Invoice
-                    </button>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Invoice Modal */}
+      <InvoiceModal
+        orderId={selectedOrderId}
+        onClose={() => setSelectedOrderId(null)}
+      />
     </div>
   );
 }
+

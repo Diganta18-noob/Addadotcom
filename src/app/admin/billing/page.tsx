@@ -4,7 +4,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatCurrency, generateBillNumber } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared";
+import { InvoiceModal } from "@/components/invoice/InvoiceModal";
 import {
+
   Receipt,
   CreditCard,
   Banknote,
@@ -704,98 +706,14 @@ export default function AdminBilling() {
         )}
       </div>
 
-      {/* Receipt Preview Modal */}
-      <AnimatePresence>
-        {showReceipt && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center"
-          >
-            <div className="absolute inset-0 bg-black/60" onClick={() => setShowReceipt(false)} />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative z-10 w-[320px] bg-white text-black p-6 rounded-xl shadow-2xl font-mono text-xs"
-            >
-              <button
-                onClick={() => setShowReceipt(false)}
-                className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-200"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              {/* Thermal Receipt */}
-              <div className="text-center space-y-2 mb-4">
-                <h2 className="text-lg font-bold">☕ AddaDotCom</h2>
-                <p className="text-[10px] text-gray-500">
-                  123 Café Street, Salt Lake Sector V<br />
-                  Kolkata 700091 • +91 98765 43210
-                </p>
-                <div className="border-t border-dashed border-gray-300 pt-2">
-                  <p className="font-bold">{billNumber}</p>
-                  <p className="text-gray-500">{new Date().toLocaleString("en-IN")}</p>
-                  <p>Table: {selectedTableNumber} • Cashier: Admin</p>
-                </div>
-              </div>
-
-              <div className="border-t border-dashed border-gray-300 py-2 space-y-1">
-                {billItems.map((item) => (
-                  <div key={item.id} className="flex justify-between">
-                    <span>{item.qty}× {item.name}{item.variant ? ` (${item.variant})` : ""}</span>
-                    <span>{formatCurrency(item.total)}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="border-t border-dashed border-gray-300 py-2 space-y-1">
-                <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
-                {discountTotal > 0 && (
-                  <div className="flex justify-between text-green-700"><span>Discount</span><span>-{formatCurrency(discountTotal)}</span></div>
-                )}
-                {serviceCharge > 0 && (
-                  <div className="flex justify-between"><span>Service ({serviceChargeRate}%)</span><span>{formatCurrency(serviceCharge)}</span></div>
-                )}
-                <div className="flex justify-between"><span>CGST ({cgstRate}%)</span><span>{formatCurrency(cgst)}</span></div>
-                <div className="flex justify-between"><span>SGST ({sgstRate}%)</span><span>{formatCurrency(sgst)}</span></div>
-                {roundingAdj !== 0 && (
-                  <div className="flex justify-between"><span>Rounding</span><span>{roundingAdj.toFixed(2)}</span></div>
-                )}
-              </div>
-
-              <div className="border-t border-dashed border-gray-300 py-2">
-                <div className="flex justify-between text-base font-bold">
-                  <span>TOTAL</span>
-                  <span>{formatCurrency(grandTotal)}</span>
-                </div>
-              </div>
-
-              <div className="border-t border-dashed border-gray-300 py-2 space-y-1">
-                {payments.map((p, i) => (
-                  <div key={i} className="flex justify-between">
-                    <span className="capitalize">{p.method.toLowerCase()}</span>
-                    <span>{formatCurrency(p.amount)}</span>
-                  </div>
-                ))}
-                {changeAmount > 0 && (
-                  <div className="flex justify-between font-bold">
-                    <span>Change</span>
-                    <span>{formatCurrency(changeAmount)}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="text-center pt-3 border-t border-dashed border-gray-300 space-y-1">
-                <p className="font-bold">Thank you for dining with us!</p>
-                <p className="text-[10px] text-gray-500">Visit again — www.addadotcom.cafe</p>
-                <p className="text-[10px] text-gray-400">GST: 29AABCA1234B1Z5</p>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Premium Tax Invoice Modal */}
+      {showReceipt && (
+        <InvoiceModal
+          orderId={activeOrder?.id || null}
+          onClose={() => setShowReceipt(false)}
+        />
+      )}
     </div>
   );
 }
+

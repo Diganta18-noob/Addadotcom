@@ -5,7 +5,9 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatCurrency, formatTime } from "@/lib/utils";
 import { StatusBadge, SearchInput, EmptyState } from "@/components/shared";
+import { OrderDetailModal } from "@/components/orders/OrderDetailModal";
 import {
+
   Clock,
   ChevronRight,
   Bell,
@@ -76,6 +78,8 @@ export default function AdminOrders() {
   const [filterType, setFilterType] = useState<OrderType | "ALL">("ALL");
   const [viewMode, setViewMode] = useState<"queue" | "kitchen">("queue");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null);
+
 
   const previousOrderIdsRef = React.useRef<Set<string>>(new Set());
 
@@ -352,7 +356,8 @@ export default function AdminOrders() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:shadow-md transition-shadow"
+                    onClick={() => setSelectedOrder(order)}
+                    className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:shadow-md hover:border-caramel/50 transition-all cursor-pointer"
                   >
                     <div className="flex items-center gap-2 min-w-[120px]">
                       {typeIcons[order.type]}
@@ -382,7 +387,10 @@ export default function AdminOrders() {
 
                     {statusFlow[order.status] && (
                       <button
-                        onClick={() => advanceStatus(order.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          advanceStatus(order.id);
+                        }}
                         className="px-3 py-1.5 bg-espresso text-cream rounded-lg text-xs font-medium hover:bg-espresso-500 transition-colors whitespace-nowrap"
                       >
                         → {statusFlow[order.status]?.replace("_", " ")}
@@ -395,6 +403,14 @@ export default function AdminOrders() {
           )}
         </>
       )}
+
+      {/* Order Detail Modal */}
+      <OrderDetailModal
+        order={selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        onAdvanceStatus={advanceStatus}
+      />
     </div>
   );
 }
+
