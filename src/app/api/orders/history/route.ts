@@ -16,8 +16,13 @@ export const GET = apiHandler(async (request) => {
   const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
   const skip = (page - 1) * limit;
 
+  const userEmail = searchParams.get("userEmail");
+
   const where: any = {};
 
+  if (userEmail) {
+    where.user = { email: userEmail };
+  }
   if (status && status !== "ALL") {
     where.status = status;
   }

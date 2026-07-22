@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn, formatCurrency, formatTime } from "@/lib/utils";
 import { StatusBadge, DashboardCardSkeleton } from "@/components/shared";
+import { useSSE } from "@/lib/useSSE";
 import {
   AreaChart,
   Area,
@@ -71,11 +72,16 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  useSSE({
+    "new-order": () => fetchDashboardStats(),
+    "order-updated": () => fetchDashboardStats(),
+    "bill-paid": () => fetchDashboardStats(),
+    "reservation-created": () => fetchDashboardStats(),
+    "table-updated": () => fetchDashboardStats(),
+  });
+
   useEffect(() => {
     fetchDashboardStats();
-    // Ultra-fast 3s real-time dashboard refresh
-    const interval = setInterval(fetchDashboardStats, 3000);
-    return () => clearInterval(interval);
   }, [fetchDashboardStats]);
 
   const kpiCards = stats

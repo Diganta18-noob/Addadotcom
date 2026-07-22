@@ -20,6 +20,7 @@ import {
   Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useSSE } from "@/lib/useSSE";
 
 type OrderStatus = "PLACED" | "ACCEPTED" | "PREPARING" | "READY" | "SERVED" | "COMPLETED" | "CANCELLED";
 type OrderType = "DINE_IN" | "TAKEAWAY" | "DELIVERY";
@@ -131,15 +132,19 @@ export default function AdminOrders() {
     }
   }, []);
 
-  // Initial fetch + smart real-time refresh (only when tab is visible)
+  useSSE({
+    "new-order": (data) => {
+      fetchOrders();
+      playChime();
+      toast.success(`🔔 NEW ORDER: ${data.orderNumber} (${data.type})!`, { duration: 6000 });
+    },
+    "order-updated": () => {
+      fetchOrders();
+    },
+  });
+
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(() => {
-      if (!document.hidden) {
-        fetchOrders();
-      }
-    }, 8000);
-    return () => clearInterval(interval);
   }, [fetchOrders]);
 
   const filteredOrders = orders.filter((o) => {

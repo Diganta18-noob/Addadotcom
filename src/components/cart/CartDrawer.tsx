@@ -119,7 +119,7 @@ export function CartDrawer() {
                             {item.variant}
                           </p>
                         )}
-                        {item.addons.length > 0 && (
+                        {item.addons && item.addons.length > 0 && (
                           <p className="text-xs text-muted-foreground">
                             +{item.addons.map((a) => a.name).join(", ")}
                           </p>

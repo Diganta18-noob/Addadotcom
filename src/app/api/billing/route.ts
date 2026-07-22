@@ -74,5 +74,18 @@ export const POST = apiHandler(async (request) => {
     });
   }
 
+  // Broadcast real-time SSE event
+  try {
+    const { broadcast } = await import("@/lib/sse-emitter");
+    broadcast("bill-paid", {
+      orderId: bill.orderId,
+      billNumber: bill.billNumber,
+      total: bill.total,
+      tableId: bill.order?.tableId || null,
+    });
+  } catch (e) {
+    console.error("SSE Broadcast Error:", e);
+  }
+
   return { data: bill, status: 201 };
 });

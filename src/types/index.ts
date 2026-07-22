@@ -63,12 +63,12 @@ export interface CartItem {
   id: string; // unique cart item ID
   menuItemId: string;
   menuItemName: string;
-  menuItemImage: string | null;
+  menuItemImage?: string | null;
   quantity: number;
-  variant: string | null; // selected variant label e.g. "Large"
+  variant?: string | null; // selected variant label e.g. "Large"
   variantPrice: number; // base price + variant modifier
-  addons: CartItemAddon[];
-  note: string;
+  addons?: CartItemAddon[];
+  note?: string;
   unitPrice: number; // variantPrice + sum of addon prices
   totalPrice: number; // unitPrice * quantity
 }

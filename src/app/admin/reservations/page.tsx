@@ -20,6 +20,7 @@ import {
   Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useSSE } from "@/lib/useSSE";
 
 interface Reservation {
   id: string;
@@ -68,14 +69,13 @@ export default function AdminReservationsPage() {
     }
   }, []);
 
+  useSSE({
+    "reservation-created": () => fetchReservations(),
+    "reservation-updated": () => fetchReservations(),
+  });
+
   useEffect(() => {
     fetchReservations();
-    const interval = setInterval(() => {
-      if (!document.hidden) {
-        fetchReservations();
-      }
-    }, 8000);
-    return () => clearInterval(interval);
   }, [fetchReservations]);
 
   const handleStatusChange = async (id: string, status: Reservation["status"]) => {

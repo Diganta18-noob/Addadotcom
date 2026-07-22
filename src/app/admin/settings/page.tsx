@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
@@ -14,6 +14,10 @@ import {
   Trash2,
   Save,
   Clock,
+  Loader2,
+  Building2,
+  ShieldCheck,
+  Globe,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -34,16 +38,24 @@ interface Staff {
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<"profile" | "taxes" | "reservations" | "staff" | "promos">("profile");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // Profile State
-  const [cafeName, setCafeName] = useState("AddaDotCom");
-  const [address, setAddress] = useState("123 Café Street, Salt Lake Sector V, Kolkata");
+  const [cafeName, setCafeName] = useState("AddaDotCom Cafe & Restaurant");
+  const [tagline, setTagline] = useState("Artisanal Coffee & Gourmet Bistro");
+  const [address, setAddress] = useState("124 Artisan Blvd, Connaught Place, New Delhi");
   const [phone, setPhone] = useState("+91 98765 43210");
-  const [email, setEmail] = useState("hello@addadotcom.cafe");
+  const [email, setEmail] = useState("support@addadotcom.cafe");
+  const [website, setWebsite] = useState("www.addadotcom.cafe");
+  const [gstin, setGstin] = useState("07AAAAA0000A1Z5");
+  const [fssai, setFssai] = useState("10021011000123");
 
-  // Taxes State
+  // Taxes & Charges State
   const [serviceCharge, setServiceCharge] = useState(5);
   const [gst, setGst] = useState(5); // 5% total (2.5% CGST + 2.5% SGST)
+  const [deliveryFee, setDeliveryFee] = useState(49);
+  const [minOrderDelivery, setMinOrderDelivery] = useState(200);
 
   // Reservation State
   const [slotDuration, setSlotDuration] = useState(90);
@@ -65,9 +77,84 @@ export default function AdminSettingsPage() {
   ]);
   const [newStaff, setNewStaff] = useState<Partial<Staff>>({ name: "", email: "", role: "STAFF" });
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  // Fetch settings from GET /api/settings
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const res = await fetch("/api/settings");
+        const json = await res.json();
+        if (res.ok && json.success && Array.isArray(json.data)) {
+          const map: Record<string, string> = {};
+          json.data.forEach((s: any) => {
+            map[s.key] = s.value;
+          });
+
+          if (map["cafe_name"]) setCafeName(map["cafe_name"]);
+          if (map["cafe_tagline"]) setTagline(map["cafe_tagline"]);
+          if (map["cafe_address"]) setAddress(map["cafe_address"]);
+          if (map["cafe_phone"]) setPhone(map["cafe_phone"]);
+          if (map["cafe_email"]) setEmail(map["cafe_email"]);
+          if (map["cafe_website"]) setWebsite(map["cafe_website"]);
+          if (map["cafe_gstin"]) setGstin(map["cafe_gstin"]);
+          if (map["cafe_fssai"]) setFssai(map["cafe_fssai"]);
+          if (map["service_charge_rate"]) setServiceCharge(parseFloat(map["service_charge_rate"]) || 5);
+          if (map["gst_rate"]) setGst(parseFloat(map["gst_rate"]) || 5);
+          if (map["delivery_fee"]) setDeliveryFee(parseFloat(map["delivery_fee"]) || 49);
+          if (map["min_order_delivery"]) setMinOrderDelivery(parseFloat(map["min_order_delivery"]) || 200);
+          if (map["slot_duration"]) setSlotDuration(parseInt(map["slot_duration"]) || 90);
+          if (map["buffer_time"]) setBufferTime(parseInt(map["buffer_time"]) || 15);
+          if (map["max_party_size"]) setMaxPartySize(parseInt(map["max_party_size"]) || 10);
+        }
+      } catch (err) {
+        console.error("Failed to load settings:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadSettings();
+  }, []);
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Settings saved successfully!");
+    setSaving(true);
+
+    const payload = [
+      { key: "cafe_name", value: cafeName, group: "general" },
+      { key: "cafe_tagline", value: tagline, group: "general" },
+      { key: "cafe_address", value: address, group: "general" },
+      { key: "cafe_phone", value: phone, group: "general" },
+      { key: "cafe_email", value: email, group: "general" },
+      { key: "cafe_website", value: website, group: "general" },
+      { key: "cafe_gstin", value: gstin, group: "general" },
+      { key: "cafe_fssai", value: fssai, group: "general" },
+      { key: "service_charge_rate", value: String(serviceCharge), group: "tax" },
+      { key: "gst_rate", value: String(gst), group: "tax" },
+      { key: "delivery_fee", value: String(deliveryFee), group: "general" },
+      { key: "min_order_delivery", value: String(minOrderDelivery), group: "general" },
+      { key: "slot_duration", value: String(slotDuration), group: "reservation" },
+      { key: "buffer_time", value: String(bufferTime), group: "reservation" },
+      { key: "max_party_size", value: String(maxPartySize), group: "reservation" },
+    ];
+
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Settings saved & updated across the platform!");
+      } else {
+        toast.error(data.message || "Failed to save settings");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error connecting to settings API");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAddPromo = (e: React.FormEvent) => {
@@ -113,6 +200,15 @@ export default function AdminSettingsPage() {
     toast.success("Staff account removed");
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-caramel" />
+        <span className="ml-3 text-muted-foreground">Loading settings...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="grid lg:grid-cols-4 gap-6">
       {/* Sidebar navigation tabs */}
@@ -120,7 +216,7 @@ export default function AdminSettingsPage() {
         {[
           { key: "profile", label: "Cafe Profile", icon: Coffee },
           { key: "taxes", label: "Taxes & Charges", icon: Percent },
-          { key: "reservations", label: "Reservations Rule", icon: CalendarRange },
+          { key: "reservations", label: "Reservations Rules", icon: CalendarRange },
           { key: "staff", label: "Staff Directory", icon: Users },
           { key: "promos", label: "Promo Codes", icon: Tag },
         ].map((tab) => {
@@ -132,7 +228,7 @@ export default function AdminSettingsPage() {
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all whitespace-nowrap lg:w-full",
                 activeTab === tab.key
-                  ? "bg-espresso text-cream"
+                  ? "bg-espresso text-cream shadow-sm"
                   : "bg-card hover:bg-muted text-muted-foreground hover:text-foreground border border-border"
               )}
             >
@@ -147,21 +243,37 @@ export default function AdminSettingsPage() {
       <div className="lg:col-span-3 rounded-2xl border border-border bg-card p-6 shadow-sm">
         {activeTab === "profile" && (
           <form onSubmit={handleSaveSettings} className="space-y-6">
-            <h3 className="font-serif text-lg font-bold">Cafe Details</h3>
+            <div className="border-b border-border pb-3 flex items-center justify-between">
+              <h3 className="font-serif text-lg font-bold flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-caramel" /> Cafe Brand Identity & Legal Details
+              </h3>
+            </div>
+
             <div className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold mb-1 block">Cafe / Restaurant Name</label>
-                <input
-                  type="text"
-                  value={cafeName}
-                  onChange={(e) => setCafeName(e.target.value)}
-                  className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
-                  required
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold mb-1 block">Cafe / Restaurant Name *</label>
+                  <input
+                    type="text"
+                    value={cafeName}
+                    onChange={(e) => setCafeName(e.target.value)}
+                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold mb-1 block">Brand Tagline</label>
+                  <input
+                    type="text"
+                    value={tagline}
+                    onChange={(e) => setTagline(e.target.value)}
+                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold mb-1 block">Full Address</label>
+                <label className="text-xs font-semibold mb-1 block">Full Registered Address *</label>
                 <input
                   type="text"
                   value={address}
@@ -171,9 +283,9 @@ export default function AdminSettingsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-xs font-semibold mb-1 block">Primary Phone</label>
+                  <label className="text-xs font-semibold mb-1 block">Primary Phone *</label>
                   <input
                     type="tel"
                     value={phone}
@@ -183,7 +295,7 @@ export default function AdminSettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold mb-1 block">Official Email Address</label>
+                  <label className="text-xs font-semibold mb-1 block">Official Email *</label>
                   <input
                     type="email"
                     value={email}
@@ -192,53 +304,116 @@ export default function AdminSettingsPage() {
                     required
                   />
                 </div>
+                <div>
+                  <label className="text-xs font-semibold mb-1 block">Website Domain</label>
+                  <input
+                    type="text"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border/60">
+                <div>
+                  <label className="text-xs font-semibold mb-1 block flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-caramel" /> GSTIN Registration Number
+                  </label>
+                  <input
+                    type="text"
+                    value={gstin}
+                    onChange={(e) => setGstin(e.target.value)}
+                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50 font-mono uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold mb-1 block flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-caramel" /> FSSAI License Number
+                  </label>
+                  <input
+                    type="text"
+                    value={fssai}
+                    onChange={(e) => setFssai(e.target.value)}
+                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50 font-mono"
+                  />
+                </div>
               </div>
             </div>
 
             <button
               type="submit"
-              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-espresso text-cream rounded-xl text-sm font-semibold hover:bg-espresso-500 transition-colors"
+              disabled={saving}
+              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-espresso text-cream rounded-xl text-sm font-semibold hover:bg-espresso-500 transition-colors disabled:opacity-50"
             >
-              <Save className="w-4 h-4" /> Save Profile
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Profile
             </button>
           </form>
         )}
 
         {activeTab === "taxes" && (
           <form onSubmit={handleSaveSettings} className="space-y-6">
-            <h3 className="font-serif text-lg font-bold">Tax Config & Extra Charges</h3>
+            <h3 className="font-serif text-lg font-bold">Tax Config & Charges</h3>
             <div className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold mb-1 block">GST Rate (%)</label>
-                <input
-                  type="number"
-                  value={gst}
-                  onChange={(e) => setGst(parseFloat(e.target.value))}
-                  className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
-                  required
-                />
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  Will be split equally into CGST (2.5%) and SGST (2.5%) on invoice receipts.
-                </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold mb-1 block">Statutory GST Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={gst}
+                    onChange={(e) => setGst(parseFloat(e.target.value))}
+                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50 font-mono"
+                    required
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Split equally into CGST (2.5%) and SGST (2.5%) on tax invoices.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold mb-1 block">Dine-in Service Charge (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={serviceCharge}
+                    onChange={(e) => setServiceCharge(parseFloat(e.target.value))}
+                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50 font-mono"
+                    required
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold mb-1 block">Dine-in Service Charge (%)</label>
-                <input
-                  type="number"
-                  value={serviceCharge}
-                  onChange={(e) => setServiceCharge(parseFloat(e.target.value))}
-                  className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
-                  required
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border/60">
+                <div>
+                  <label className="text-xs font-semibold mb-1 block">Flat Delivery Fee (₹)</label>
+                  <input
+                    type="number"
+                    value={deliveryFee}
+                    onChange={(e) => setDeliveryFee(parseFloat(e.target.value))}
+                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50 font-mono"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold mb-1 block">Min. Order for Free Delivery (₹)</label>
+                  <input
+                    type="number"
+                    value={minOrderDelivery}
+                    onChange={(e) => setMinOrderDelivery(parseFloat(e.target.value))}
+                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50 font-mono"
+                    required
+                  />
+                </div>
               </div>
             </div>
 
             <button
               type="submit"
-              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-espresso text-cream rounded-xl text-sm font-semibold hover:bg-espresso-500 transition-colors"
+              disabled={saving}
+              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-espresso text-cream rounded-xl text-sm font-semibold hover:bg-espresso-500 transition-colors disabled:opacity-50"
             >
-              <Save className="w-4 h-4" /> Save Configuration
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Tax Settings
             </button>
           </form>
         )}
@@ -254,7 +429,7 @@ export default function AdminSettingsPage() {
                     type="number"
                     value={slotDuration}
                     onChange={(e) => setSlotDuration(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
+                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50 font-mono"
                     required
                   />
                 </div>
@@ -264,7 +439,7 @@ export default function AdminSettingsPage() {
                     type="number"
                     value={bufferTime}
                     onChange={(e) => setBufferTime(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
+                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50 font-mono"
                     required
                   />
                 </div>
@@ -274,7 +449,7 @@ export default function AdminSettingsPage() {
                     type="number"
                     value={maxPartySize}
                     onChange={(e) => setMaxPartySize(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
+                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50 font-mono"
                     required
                   />
                 </div>
@@ -283,9 +458,10 @@ export default function AdminSettingsPage() {
 
             <button
               type="submit"
-              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-espresso text-cream rounded-xl text-sm font-semibold hover:bg-espresso-500 transition-colors"
+              disabled={saving}
+              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-espresso text-cream rounded-xl text-sm font-semibold hover:bg-espresso-500 transition-colors disabled:opacity-50"
             >
-              <Save className="w-4 h-4" /> Save Rules
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Rules
             </button>
           </form>
         )}

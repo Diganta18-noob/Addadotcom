@@ -74,6 +74,16 @@ export default function OrderPage() {
   const [loading, setLoading] = useState(false);
   const [realtimeTables, setRealtimeTables] = useState<any[]>([]);
   const [loadingTables, setLoadingTables] = useState(false);
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const qrTableParam = searchParams?.get("table");
+  const isQRMode = searchParams?.get("qr") === "1";
+
+  React.useEffect(() => {
+    if (qrTableParam && isQRMode) {
+      setOrderType("DINE_IN");
+      setTableNumber(qrTableParam);
+    }
+  }, [qrTableParam, isQRMode, setOrderType, setTableNumber]);
 
   React.useEffect(() => {
     if (orderType === "DINE_IN") {
@@ -470,7 +480,7 @@ export default function OrderPage() {
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-semibold">{item.menuItemName}</h4>
                       {item.variant && <p className="text-xs text-muted-foreground">{item.variant}</p>}
-                      {item.addons.length > 0 && (
+                      {item.addons && item.addons.length > 0 && (
                         <p className="text-xs text-muted-foreground">+{item.addons.map(a => a.name).join(", ")}</p>
                       )}
                       {item.note && <p className="text-xs text-caramel italic">&quot;{item.note}&quot;</p>}

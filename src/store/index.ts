@@ -67,7 +67,8 @@ export const useCartStore = create<CartStore>()(
       activeOrder: null,
 
       addItem: (item) => {
-        const id = `${item.menuItemId}-${item.variant || "default"}-${item.addons.map(a => a.name).join(",")}`;
+        const addonsKey = (item.addons || []).map((a) => a.name).join(",");
+        const id = `${item.menuItemId}-${item.variant || "default"}-${addonsKey}`;
         set((state) => {
           const existingIndex = state.items.findIndex(
             (i) => i.id === id && i.note === item.note

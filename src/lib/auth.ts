@@ -69,6 +69,15 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         (session.user as any).role = token.role;
         (session.user as any).id = token.id;
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { loyaltyPoints: true },
+          });
+          (session.user as any).loyaltyPoints = dbUser?.loyaltyPoints || 0;
+        } catch {
+          (session.user as any).loyaltyPoints = 0;
+        }
       }
       return session;
     },

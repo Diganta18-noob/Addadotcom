@@ -87,5 +87,19 @@ export const POST = apiHandler(async (request) => {
     });
   }
 
+  // Broadcast real-time SSE event
+  try {
+    const { broadcast } = await import("@/lib/sse-emitter");
+    broadcast("reservation-created", {
+      id: reservation.id,
+      guestName: reservation.guestName,
+      date: reservation.date,
+      timeSlot: reservation.timeSlot,
+      partySize: reservation.partySize,
+    });
+  } catch (e) {
+    console.error("SSE Broadcast Error:", e);
+  }
+
   return { data: reservation, status: 201 };
 });

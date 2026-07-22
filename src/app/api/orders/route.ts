@@ -91,5 +91,19 @@ export const POST = apiHandler(async (request) => {
     });
   }
 
+  // Broadcast real-time SSE event
+  try {
+    const { broadcast } = await import("@/lib/sse-emitter");
+    broadcast("new-order", {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      type: order.type,
+      tableNumber: order.table?.number || null,
+      itemCount: Array.isArray(data.items) ? data.items.length : 0,
+    });
+  } catch (e) {
+    console.error("SSE Broadcast Error:", e);
+  }
+
   return { data: order, status: 201 };
 });

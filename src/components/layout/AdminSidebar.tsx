@@ -19,6 +19,8 @@ import {
   Coffee,
   LogOut,
   Users,
+  ChefHat,
+  Star,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -28,13 +30,15 @@ interface AdminSidebarProps {
 
 const sidebarLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/menu", label: "Menu", icon: UtensilsCrossed },
-  { href: "/admin/tables", label: "Tables", icon: Grid3X3 },
+  { href: "/admin/kitchen", label: "Kitchen Display (KDS)", icon: ChefHat },
   { href: "/admin/orders", label: "Orders", icon: ClipboardList },
+  { href: "/admin/menu", label: "Menu", icon: UtensilsCrossed },
+  { href: "/admin/tables", label: "Tables & QR", icon: Grid3X3 },
   { href: "/admin/history", label: "Order History", icon: ClipboardList },
   { href: "/admin/billing", label: "Billing / POS", icon: Receipt },
   { href: "/admin/reservations", label: "Reservations", icon: CalendarDays },
   { href: "/admin/inventory", label: "Inventory", icon: Package },
+  { href: "/admin/reviews", label: "Customer Reviews", icon: Star },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
