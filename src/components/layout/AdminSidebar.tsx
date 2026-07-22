@@ -31,10 +31,12 @@ const sidebarLinks = [
   { href: "/admin/menu", label: "Menu", icon: UtensilsCrossed },
   { href: "/admin/tables", label: "Tables", icon: Grid3X3 },
   { href: "/admin/orders", label: "Orders", icon: ClipboardList },
+  { href: "/admin/history", label: "Order History", icon: ClipboardList },
   { href: "/admin/billing", label: "Billing / POS", icon: Receipt },
   { href: "/admin/reservations", label: "Reservations", icon: CalendarDays },
   { href: "/admin/inventory", label: "Inventory", icon: Package },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

@@ -31,7 +31,11 @@ import {
 
 interface DashboardStats {
   todayRevenue: number;
+  weeklyRevenue?: number;
+  monthlyRevenue?: number;
+  yearlyRevenue?: number;
   todayOrders: number;
+  totalOrdersAllTime?: number;
   avgOrderValue: number;
   todayReservations: number;
   topSellingItems: { name: string; count: number; revenue: number }[];
@@ -79,14 +83,22 @@ export default function AdminDashboard() {
         {
           label: "Today's Revenue",
           value: formatCurrency(stats.todayRevenue),
-          change: "+12.5%",
+          change: "Live today",
           positive: true,
           icon: DollarSign,
           color: "bg-caramel/10 text-caramel",
         },
         {
-          label: "Orders Today",
-          value: stats.todayOrders.toString(),
+          label: "This Month Revenue",
+          value: formatCurrency(stats.monthlyRevenue || 0),
+          change: "Current month",
+          positive: true,
+          icon: TrendingUp,
+          color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+        },
+        {
+          label: "Orders Today / Total",
+          value: `${stats.todayOrders} / ${stats.totalOrdersAllTime || stats.todayOrders}`,
           change: "Live order count",
           positive: true,
           icon: ShoppingBag,
@@ -99,14 +111,6 @@ export default function AdminDashboard() {
           positive: true,
           icon: TrendingUp,
           color: "bg-sage/10 text-sage-600",
-        },
-        {
-          label: "Reservations Today",
-          value: stats.todayReservations.toString(),
-          change: "Table bookings",
-          positive: true,
-          icon: CalendarDays,
-          color: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400",
         },
       ]
     : [];

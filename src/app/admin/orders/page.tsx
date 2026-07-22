@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatCurrency, formatTime } from "@/lib/utils";
 import { StatusBadge, SearchInput, EmptyState } from "@/components/shared";
@@ -210,6 +211,12 @@ export default function AdminOrders() {
           >
             Kitchen Display
           </button>
+          <Link
+            href="/admin/history"
+            className="px-4 py-2 bg-caramel text-espresso rounded-lg text-sm font-bold hover:bg-caramel-300 transition-all inline-flex items-center gap-1.5 shadow-sm"
+          >
+            View Full History →
+          </Link>
         </div>
 
         <div className="flex gap-2 flex-wrap">

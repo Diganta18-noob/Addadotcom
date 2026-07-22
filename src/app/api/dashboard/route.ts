@@ -5,46 +5,46 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const GET = apiHandler(async () => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-  // Today's stats
-  const todayBills = await prisma.bill.findMany({
-    where: {
-      createdAt: { gte: today, lte: endOfDay },
-      status: "PAID",
-    },
-  });
+  const startOfWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+  // Aggregations
+  const [
+    todayBills,
+    weekBills,
+    monthBills,
+    yearBills,
+    todayOrders,
+    totalOrdersAllTime,
+    todayReservations,
+    todayOrdersData,
+  ] = await Promise.all([
+    prisma.bill.findMany({ where: { createdAt: { gte: today, lte: endOfDay }, status: "PAID" } }),
+    prisma.bill.findMany({ where: { createdAt: { gte: startOfWeek }, status: "PAID" } }),
+    prisma.bill.findMany({ where: { createdAt: { gte: startOfMonth }, status: "PAID" } }),
+    prisma.bill.findMany({ where: { createdAt: { gte: startOfYear }, status: "PAID" } }),
+    prisma.order.count({ where: { createdAt: { gte: today, lte: endOfDay } } }),
+    prisma.order.count(),
+    prisma.reservation.count({ where: { date: { gte: today, lte: endOfDay } } }),
+    prisma.order.findMany({ where: { createdAt: { gte: today, lte: endOfDay }, status: { not: "CANCELLED" } } }),
+  ]);
 
   const todayRevenue = todayBills.reduce((sum, b) => sum + b.total, 0);
-
-  const todayOrders = await prisma.order.count({
-    where: {
-      createdAt: { gte: today, lte: endOfDay },
-    },
-  });
-
-  const todayReservations = await prisma.reservation.count({
-    where: {
-      date: { gte: today, lte: endOfDay },
-    },
-  });
+  const weeklyRevenue = weekBills.reduce((sum, b) => sum + b.total, 0);
+  const monthlyRevenue = monthBills.reduce((sum, b) => sum + b.total, 0);
+  const yearlyRevenue = yearBills.reduce((sum, b) => sum + b.total, 0);
 
   const avgOrderValue = todayOrders > 0 ? todayRevenue / todayOrders : 0;
 
-  // Top selling items (from today's orders)
-  const todayOrdersData = await prisma.order.findMany({
-    where: {
-      createdAt: { gte: today, lte: endOfDay },
-      status: { not: "CANCELLED" },
-    },
-  });
-
+  // Top selling items
   const itemCounts: Record<string, { name: string; count: number; revenue: number }> = {};
   todayOrdersData.forEach((order) => {
-    const items = order.items as any[];
+    const items = typeof order.items === "string" ? JSON.parse(order.items) : order.items;
     if (Array.isArray(items)) {
       items.forEach((item) => {
         const key = item.menuItemName || item.menuItemId;
@@ -72,10 +72,7 @@ export const GET = apiHandler(async () => {
     dEnd.setHours(23, 59, 59, 999);
 
     const bills = await prisma.bill.findMany({
-      where: {
-        createdAt: { gte: d, lte: dEnd },
-        status: "PAID",
-      },
+      where: { createdAt: { gte: d, lte: dEnd }, status: "PAID" },
     });
 
     revenueByDay.push({
@@ -84,10 +81,8 @@ export const GET = apiHandler(async () => {
     });
   }
 
-  // Map items to categories for accurate category sales chart
-  const allMenuItems = await prisma.menuItem.findMany({
-    include: { category: true },
-  });
+  // Categories map
+  const allMenuItems = await prisma.menuItem.findMany({ include: { category: true } });
   const itemToCategoryMap: Record<string, string> = {};
   allMenuItems.forEach((item) => {
     itemToCategoryMap[item.name] = item.category.name;
@@ -96,7 +91,7 @@ export const GET = apiHandler(async () => {
 
   const categoryRevenue: Record<string, number> = {};
   todayOrdersData.forEach((order) => {
-    const items = order.items as any[];
+    const items = typeof order.items === "string" ? JSON.parse(order.items) : order.items;
     if (Array.isArray(items)) {
       items.forEach((item) => {
         const categoryName =
@@ -116,7 +111,6 @@ export const GET = apiHandler(async () => {
     color: colors[idx % colors.length],
   }));
 
-  // If no sales yet today, add empty category stats to avoid rendering crash
   if (salesByCategory.length === 0) {
     salesByCategory.push({ category: "Coffee & Beverages", revenue: 0, color: "#D4A056" });
   }
@@ -125,7 +119,7 @@ export const GET = apiHandler(async () => {
   const recentOrders = await prisma.order.findMany({
     orderBy: { createdAt: "desc" },
     take: 10,
-    include: { table: true },
+    include: { table: true, bill: true },
   });
 
   const mappedRecentOrders = recentOrders.map((order) => ({
@@ -146,8 +140,12 @@ export const GET = apiHandler(async () => {
 
   return {
     data: {
-      todayRevenue,
+      todayRevenue: Math.round(todayRevenue * 100) / 100,
+      weeklyRevenue: Math.round(weeklyRevenue * 100) / 100,
+      monthlyRevenue: Math.round(monthlyRevenue * 100) / 100,
+      yearlyRevenue: Math.round(yearlyRevenue * 100) / 100,
       todayOrders,
+      totalOrdersAllTime,
       avgOrderValue: Math.round(avgOrderValue * 100) / 100,
       todayReservations,
       topSellingItems,

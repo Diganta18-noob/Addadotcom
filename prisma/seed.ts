@@ -430,6 +430,103 @@ async function main() {
 
   console.log("Settings seeded.");
 
+  // 8. Create Historical Orders & Bills across past 6 months
+  const createdTables = await prisma.cafeTable.findMany();
+  const createdItems = await prisma.menuItem.findMany();
+
+  const paymentMethods = ["UPI", "CARD", "CASH"];
+  const orderStatuses = ["COMPLETED", "COMPLETED", "COMPLETED", "COMPLETED", "CANCELLED"] as const;
+  const orderTypes = ["DINE_IN", "TAKEAWAY", "DELIVERY"] as const;
+
+  const now = new Date();
+  let orderCounter = 1000;
+
+  // Generate 60 historical orders over the past 90 days
+  for (let dayOffset = 0; dayOffset <= 90; dayOffset += 1.5) {
+    const orderDate = new Date(now.getTime() - Math.floor(dayOffset * 24 * 60 * 60 * 1000));
+    // Vary hour between 9 AM and 10 PM
+    orderDate.setHours(9 + Math.floor(Math.random() * 13), Math.floor(Math.random() * 60), 0, 0);
+
+    orderCounter++;
+    const orderNum = `ORD-${orderDate.getFullYear()}${String(orderDate.getMonth() + 1).padStart(2, "0")}${String(orderDate.getDate()).padStart(2, "0")}-${orderCounter}`;
+    const billNum = `INV-${orderDate.getFullYear()}${String(orderDate.getMonth() + 1).padStart(2, "0")}-${orderCounter}`;
+
+    const isCancelled = Math.random() < 0.08;
+    const status = isCancelled ? "CANCELLED" : "COMPLETED";
+    const type = orderTypes[Math.floor(Math.random() * orderTypes.length)];
+
+    // Pick 1-4 random menu items
+    const itemCount = 1 + Math.floor(Math.random() * 3);
+    const selectedItems = [];
+    let subtotal = 0;
+
+    for (let i = 0; i < itemCount; i++) {
+      const item = createdItems[Math.floor(Math.random() * createdItems.length)];
+      const qty = 1 + Math.floor(Math.random() * 2);
+      const itemTotal = item.price * qty;
+      subtotal += itemTotal;
+
+      selectedItems.push({
+        menuItemId: item.id,
+        menuItemName: item.name,
+        qty,
+        unitPrice: item.price,
+        totalPrice: itemTotal,
+        variant: null,
+        addons: [],
+        note: "",
+      });
+    }
+
+    const cgst = Math.round(subtotal * 0.025 * 100) / 100;
+    const sgst = Math.round(subtotal * 0.025 * 100) / 100;
+    const serviceCharge = type === "DINE_IN" ? Math.round(subtotal * 0.05 * 100) / 100 : 0;
+    const total = Math.round((subtotal + cgst + sgst + serviceCharge) * 100) / 100;
+
+    const chosenTable = type === "DINE_IN" ? createdTables[Math.floor(Math.random() * createdTables.length)] : null;
+    const payMethod = paymentMethods[Math.floor(Math.random() * paymentMethods.length)];
+
+    const createdOrder = await prisma.order.create({
+      data: {
+        orderNumber: orderNum,
+        userId: customer.id,
+        type,
+        tableId: chosenTable?.id || null,
+        status,
+        items: selectedItems,
+        deliveryFee: type === "DELIVERY" ? 49 : 0,
+        createdAt: orderDate,
+        updatedAt: orderDate,
+      },
+    });
+
+    if (status === "COMPLETED") {
+      await prisma.bill.create({
+        data: {
+          billNumber: billNum,
+          orderId: createdOrder.id,
+          subtotal,
+          serviceCharge,
+          serviceChargeRate: type === "DINE_IN" ? 5 : 0,
+          total,
+          status: "PAID",
+          cashierId: staff.id,
+          discounts: [],
+          taxes: [
+            { name: "CGST", rate: 2.5, amount: cgst },
+            { name: "SGST", rate: 2.5, amount: sgst },
+          ],
+          payments: [
+            { method: payMethod, amount: total, reference: `TXN-${orderCounter}` },
+          ],
+          createdAt: orderDate,
+          updatedAt: orderDate,
+        },
+      });
+    }
+  }
+
+  console.log("Historical Orders & Bills seeded.");
   console.log("Database seeded successfully!");
 }
 
