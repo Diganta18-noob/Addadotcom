@@ -100,26 +100,29 @@ export default function AdminBilling() {
   // Receipt UI
   const [showReceipt, setShowReceipt] = useState(false);
 
-  // Fetch initial data
+  // Fetch initial data using pure async/await with explicit error handling (No Promise.all)
   const fetchData = useCallback(async () => {
+    setLoading(true);
+    
+    // 1. Fetch tables
     try {
-      // 1. Fetch tables
       const tablesRes = await fetch("/api/tables");
+      if (!tablesRes.ok) throw new Error(`Tables API error: ${tablesRes.status}`);
       const tablesData = await tablesRes.json();
-
-      // 2. Fetch active orders
-      const ordersRes = await fetch("/api/orders?today=true");
-      const ordersData = await ordersRes.json();
-
-      if (tablesData.success) {
+      if (tablesData.success && Array.isArray(tablesData.data)) {
         setTables(tablesData.data);
-        if (tablesData.data.length > 0 && !selectedTableId) {
-          // Default to the first table
-          setSelectedTableId(tablesData.data[0].id);
-        }
+        setSelectedTableId((prev) => prev || (tablesData.data.length > 0 ? tablesData.data[0].id : ""));
       }
+    } catch (error) {
+      console.error("Error fetching tables in billing:", error);
+    }
 
-      if (ordersData.success) {
+    // 2. Fetch orders
+    try {
+      const ordersRes = await fetch("/api/orders?today=true");
+      if (!ordersRes.ok) throw new Error(`Orders API error: ${ordersRes.status}`);
+      const ordersData = await ordersRes.json();
+      if (ordersData.success && Array.isArray(ordersData.data)) {
         const parsed = ordersData.data.map((order: any) => ({
           ...order,
           items: typeof order.items === "string" ? JSON.parse(order.items) : order.items,
@@ -127,11 +130,11 @@ export default function AdminBilling() {
         setOrders(parsed);
       }
     } catch (error) {
-      console.error("Billing fetch error:", error);
+      console.error("Error fetching orders in billing:", error);
     } finally {
       setLoading(false);
     }
-  }, [selectedTableId]);
+  }, []);
 
   useEffect(() => {
     setIsMounted(true);
@@ -307,9 +310,17 @@ export default function AdminBilling() {
 
   if (loading && tables.length === 0) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-caramel" />
-        <span className="ml-3 text-muted-foreground">Loading billing console...</span>
+      <div className="space-y-6 animate-pulse">
+        <div className="grid lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-3 space-y-6">
+            <div className="h-10 bg-muted/60 rounded-xl w-64" />
+            <div className="h-64 bg-muted/40 rounded-2xl border border-border" />
+            <div className="h-40 bg-muted/40 rounded-2xl border border-border" />
+          </div>
+          <div className="lg:col-span-2 space-y-6">
+            <div className="h-96 bg-muted/50 rounded-2xl border border-border" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -364,7 +375,7 @@ export default function AdminBilling() {
             </div>
           ) : (
             <>
-              <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="rounded-xl border border-border bg-card overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-muted/50">
                     <tr>

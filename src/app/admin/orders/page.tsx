@@ -126,10 +126,14 @@ export default function AdminOrders() {
     }
   }, []);
 
-  // Initial fetch + ultra-fast 2s real-time refresh
+  // Initial fetch + smart real-time refresh (only when tab is visible)
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 2000);
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        fetchOrders();
+      }
+    }, 8000);
     return () => clearInterval(interval);
   }, [fetchOrders]);
 

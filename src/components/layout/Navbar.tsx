@@ -112,8 +112,8 @@ export function Navbar() {
               </span>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-1">
+            {/* Desktop Navigation (xl screens and above) */}
+            <div className="hidden xl:flex items-center gap-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -139,7 +139,7 @@ export function Navbar() {
             </div>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {/* Dark Mode Toggle */}
               <button
                 onClick={toggleDarkMode}
@@ -191,7 +191,7 @@ export function Navbar() {
                 <User className="w-5 h-5" />
               </Link>
 
-              {/* Admin Link (shown for development) */}
+              {/* Admin Link */}
               <Link
                 href="/admin"
                 className={cn(
@@ -204,11 +204,11 @@ export function Navbar() {
                 Admin
               </Link>
 
-              {/* Mobile Menu Toggle */}
+              {/* Mobile/Tablet Menu Toggle */}
               <button
                 onClick={toggleMobileMenu}
                 className={cn(
-                  "lg:hidden p-2 rounded-full transition-all",
+                  "xl:hidden p-2 rounded-full transition-all",
                   isDarkHeader
                     ? "hover:bg-white/10 text-white/80"
                     : "hover:bg-muted text-foreground/70"
@@ -229,7 +229,7 @@ export function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 lg:hidden"
+            className="fixed inset-0 z-40 xl:hidden"
           >
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeMobileMenu} />
             <motion.div
@@ -307,7 +307,7 @@ export function MobileBottomBar() {
   if (pathname?.startsWith("/admin")) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-background/95 backdrop-blur-md border-t border-border safe-bottom">
+    <div className="fixed bottom-0 left-0 right-0 z-40 xl:hidden bg-background/95 backdrop-blur-md border-t border-border safe-bottom">
       <nav className="flex items-center justify-around h-16 max-w-lg mx-auto">
         {bottomLinks.map((link) => {
           const isCart = link.href === "/cart";

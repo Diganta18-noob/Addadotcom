@@ -143,8 +143,10 @@
     background-image: linear-gradient(135deg, #4B2E2B, #D4A056);
   }
 
-  /* Smooth scroll for sections */
-  .scroll-smooth {
-    scroll-behavior: smooth;
+  /* Smooth scroll for sections with respect to user preferences */
+  @media (prefers-reduced-motion: no-preference) {
+    .scroll-smooth {
+      scroll-behavior: smooth;
+    }
   }
 }

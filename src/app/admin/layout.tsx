@@ -16,6 +16,17 @@ export default function AdminLayout({
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
 
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 1024) {
+        setCollapsed(true);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // 1. Loading Session State
   if (status === "loading") {
     return (
@@ -68,7 +79,7 @@ export default function AdminLayout({
           collapsed ? "ml-16" : "ml-64"
         )}
       >
-        <div className="p-6">{children}</div>
+        <div className="p-4 sm:p-6 pb-20 lg:pb-6">{children}</div>
       </main>
     </div>
   );

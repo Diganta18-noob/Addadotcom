@@ -59,8 +59,12 @@ export default function AdminTables() {
 
   useEffect(() => {
     fetchTables();
-    // Real-time 2s table status refresh
-    const interval = setInterval(fetchTables, 2000);
+    // Smart 8s real-time table status refresh when tab is visible
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        fetchTables();
+      }
+    }, 8000);
     return () => clearInterval(interval);
   }, [fetchTables]);
 
@@ -107,11 +111,19 @@ export default function AdminTables() {
     RESERVED: tables.filter((t) => t.status === "RESERVED").length,
   };
 
-  if (loading) {
+  if (loading && tables.length === 0) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-caramel" />
-        <span className="ml-3 text-muted-foreground">Loading tables...</span>
+      <div className="space-y-6 animate-pulse">
+        <div className="grid grid-cols-3 gap-4">
+          <div className="h-20 bg-muted/60 rounded-xl" />
+          <div className="h-20 bg-muted/60 rounded-xl" />
+          <div className="h-20 bg-muted/60 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="h-32 bg-muted/40 rounded-2xl border border-border" />
+          ))}
+        </div>
       </div>
     );
   }

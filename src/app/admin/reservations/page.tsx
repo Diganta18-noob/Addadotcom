@@ -70,7 +70,11 @@ export default function AdminReservationsPage() {
 
   useEffect(() => {
     fetchReservations();
-    const interval = setInterval(fetchReservations, 3000);
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        fetchReservations();
+      }
+    }, 8000);
     return () => clearInterval(interval);
   }, [fetchReservations]);
 

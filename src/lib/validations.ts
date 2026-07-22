@@ -23,7 +23,7 @@ export const createOrderSchema = z.object({
   deliveryFee: z.number().min(0).default(0),
   pickupTime: z.string().optional().nullable(),
   notes: z.string().max(500, "Notes cannot exceed 500 characters").optional().nullable(),
-  items: z.any(), // JSON array stored as-is
+  items: z.any(),
 });
 
 export const updateOrderSchema = z.object({

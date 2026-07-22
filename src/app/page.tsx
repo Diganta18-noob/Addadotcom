@@ -86,25 +86,25 @@ function HeroSection() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.8 }}
-            className="flex flex-wrap gap-4"
+            className="flex flex-wrap items-center gap-3 sm:gap-4"
           >
             <Link
               href="/menu"
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-caramel text-espresso rounded-full text-sm font-semibold hover:bg-caramel-300 transition-all shadow-lg shadow-caramel/30 hover:shadow-xl hover:shadow-caramel/40 hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-caramel text-espresso rounded-full text-sm font-semibold hover:bg-caramel-300 transition-all shadow-lg shadow-caramel/30 hover:shadow-xl hover:shadow-caramel/40 hover:-translate-y-0.5"
             >
               <UtensilsCrossed className="w-4 h-4" />
               View Menu
             </Link>
             <Link
               href="/reserve"
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-white/10 text-white backdrop-blur-sm border border-white/20 rounded-full text-sm font-semibold hover:bg-white/20 transition-all hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-white/10 text-white backdrop-blur-sm border border-white/20 rounded-full text-sm font-semibold hover:bg-white/20 transition-all hover:-translate-y-0.5"
             >
               <CalendarDays className="w-4 h-4" />
               Reserve a Table
             </Link>
             <Link
               href="/order"
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-white/10 text-white backdrop-blur-sm border border-white/20 rounded-full text-sm font-semibold hover:bg-white/20 transition-all hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-white/10 text-white backdrop-blur-sm border border-white/20 rounded-full text-sm font-semibold hover:bg-white/20 transition-all hover:-translate-y-0.5"
             >
               <Coffee className="w-4 h-4" />
               Order Online
