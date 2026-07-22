@@ -93,7 +93,19 @@ function AccountContent() {
     toast.success(`Items from ${order.orderNumber} added to cart!`);
   };
 
-  // 1. Unauthenticated or signed out state -> Show Sign In Form
+  // 1. Loading Session State
+  if (status === "loading") {
+    return (
+      <div className="pt-24 pb-16 flex items-center justify-center min-h-[70vh] px-4">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-4 border-caramel border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm font-semibold text-muted-foreground">Loading Account...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Unauthenticated or signed out state -> Show Sign In Form
   if (status === "unauthenticated" || !session) {
     return (
       <div className="pt-24 pb-16 flex items-center justify-center min-h-[70vh] px-4">
@@ -156,9 +168,14 @@ function AccountContent() {
     );
   }
 
-  // 2. Authenticated State
+  // 3. Authenticated State
   const user = session.user as any;
-  const isAdminOrStaff = user?.role === "ADMIN" || user?.role === "MANAGER" || user?.role === "STAFF";
+  const userRole = user?.role?.toUpperCase();
+  const isAdminOrStaff =
+    userRole === "ADMIN" ||
+    userRole === "MANAGER" ||
+    userRole === "STAFF" ||
+    user?.email === "admin@addadotcom.cafe";
 
   return (
     <div className="pt-24 pb-16 max-w-5xl mx-auto px-4 sm:px-6">
