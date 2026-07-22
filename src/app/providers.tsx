@@ -32,8 +32,8 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
           },
         }}
       />
-      <CartDrawer />
       {!isAdmin && <Navbar />}
+      <CartDrawer />
       <main className={isAdmin ? "" : "min-h-screen"}>
         {children}
       </main>
