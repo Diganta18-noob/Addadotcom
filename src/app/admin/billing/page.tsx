@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatCurrency, generateBillNumber } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared";
@@ -62,6 +63,7 @@ interface OrderData {
   orderNumber: string;
   type: string;
   tableId: string | null;
+  table?: { id?: string; number: number } | null;
   status: string;
   items: any;
   notes: string | null;
@@ -161,11 +163,17 @@ function AdminBillingContent() {
       return;
     }
 
-    const tableOrder = orders.find(
-      (o) =>
-        (o.tableId === selectedTableId || (o.type === "DINE_IN" && !o.tableId)) &&
-        !["COMPLETED", "CANCELLED"].includes(o.status)
-    );
+    const selectedTable = tables.find((t) => t.id === selectedTableId);
+    const tableOrder = orders.find((o) => {
+      if (["COMPLETED", "CANCELLED"].includes(o.status)) return false;
+      if (o.type !== "DINE_IN") return false;
+      if (o.tableId === selectedTableId) return true;
+      if (selectedTable && o.table?.number === selectedTable.number) return true;
+      const allMatchedTableIds = orders
+        .filter((ord) => ord.tableId && !["COMPLETED", "CANCELLED"].includes(ord.status))
+        .map((ord) => ord.tableId);
+      return !o.tableId && !allMatchedTableIds.includes(selectedTableId);
+    });
 
     if (tableOrder) {
       setActiveOrder(tableOrder);
@@ -376,12 +384,35 @@ function AdminBillingContent() {
 
           {/* Items Table */}
           {billItems.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card p-12 text-center">
-              <Receipt className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-50" />
-              <h3 className="font-semibold text-base mb-1">No Active Order</h3>
-              <p className="text-sm text-muted-foreground">
-                Table {selectedTableNumber} currently has no active dine-in orders.
-              </p>
+            <div className="rounded-xl border border-border bg-card p-8 text-center space-y-4">
+              <Receipt className="w-12 h-12 mx-auto text-muted-foreground opacity-50" />
+              <div>
+                <h3 className="font-semibold text-base mb-1">No Active Order Auto-Detected</h3>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                  Table {selectedTableNumber} currently has no active dine-in orders auto-matched.
+                </p>
+              </div>
+              <div className="max-w-md mx-auto pt-2 space-y-2">
+                <input
+                  type="text"
+                  placeholder="Search by order number (e.g. ORD-...)"
+                  className="w-full px-4 py-2.5 bg-muted border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50 font-mono text-center"
+                  onChange={(e) => {
+                    const val = e.target.value.trim().toUpperCase();
+                    if (val.length >= 4) {
+                      const found = orders.find(
+                        (o) => o.orderNumber.includes(val) && !["COMPLETED", "CANCELLED"].includes(o.status)
+                      );
+                      if (found) {
+                        setActiveOrder(found);
+                      }
+                    }
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Or <Link href="/admin/orders" className="text-caramel underline font-semibold">view all active orders</Link> to select an order manually.
+                </p>
+              </div>
             </div>
           ) : (
             <>

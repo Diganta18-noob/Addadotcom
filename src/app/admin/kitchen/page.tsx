@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSSE } from "@/lib/useSSE";
 import { cn, formatTime } from "@/lib/utils";
@@ -17,6 +18,7 @@ import {
   Minimize2,
   Loader2,
   ChevronRight,
+  Receipt,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { gsap } from "gsap";
@@ -39,7 +41,8 @@ interface KDSOrder {
   status: OrderStatus;
   items: OrderItem[];
   notes?: string | null;
-  table?: { number: number } | null;
+  tableId?: string | null;
+  table?: { id?: string; number: number } | null;
   createdAt: string;
 }
 
@@ -368,6 +371,14 @@ export default function KitchenKDSPage() {
                           >
                             Advance to {statusNext[order.status]?.replace("_", " ")} <ChevronRight className="w-4 h-4" />
                           </button>
+                        )}
+                        {order.status === "SERVED" && (
+                          <Link
+                            href={`/admin/billing?tableId=${order.tableId || order.table?.id || ""}`}
+                            className="w-full py-2.5 bg-caramel text-espresso font-bold text-xs rounded-xl hover:bg-caramel-300 transition-colors flex items-center justify-center gap-1.5 shadow-sm mt-2"
+                          >
+                            <Receipt className="w-4 h-4" /> Generate Bill
+                          </Link>
                         )}
                       </motion.div>
                     );

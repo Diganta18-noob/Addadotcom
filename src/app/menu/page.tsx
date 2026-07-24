@@ -501,38 +501,47 @@ export default function MenuPage() {
 
       const data = await res.json();
 
-      if (data.success && data.data) {
-        const rawItems = Array.isArray(data.data) ? data.data : data.data.items || [];
-        const rawCategories = data.data.categories;
+      let rawItems: any[] = [];
+      let rawCategories: any[] = [];
 
-        if (Array.isArray(rawCategories) && rawCategories.length > 0) {
-          setCategories(rawCategories);
-        }
+      if (data.success && Array.isArray(data.data)) {
+        rawItems = data.data;
+      } else if (data.success && data.data?.items) {
+        rawItems = data.data.items;
+        rawCategories = data.data.categories || [];
+      } else if (Array.isArray(data.items)) {
+        rawItems = data.items;
+      } else if (Array.isArray(data)) {
+        rawItems = data;
+      }
 
-        if (Array.isArray(rawItems) && rawItems.length > 0) {
-          const mapped = rawItems.map(normalizeMenuItem);
-          setItems(mapped);
+      if (Array.isArray(rawCategories) && rawCategories.length > 0) {
+        setCategories(rawCategories);
+      }
 
-          if (!rawCategories || rawCategories.length === 0) {
-            const extractedCategories: CategoryType[] = [];
-            const seenSlugs = new Set<string>();
-            mapped.forEach((item: any) => {
-              const catSlug = item.category?.slug || item.categorySlug;
-              const catName = item.category?.name || item.categoryName;
-              if (catSlug && !seenSlugs.has(catSlug)) {
-                seenSlugs.add(catSlug);
-                extractedCategories.push({
-                  id: item.category?.id || item.categoryId,
-                  name: catName || catSlug,
-                  slug: catSlug,
-                  image: null,
-                  sortOrder: extractedCategories.length,
-                });
-              }
-            });
-            if (extractedCategories.length > 0) {
-              setCategories(extractedCategories);
+      if (Array.isArray(rawItems) && rawItems.length > 0) {
+        const mapped = rawItems.map(normalizeMenuItem);
+        setItems(mapped);
+
+        if (!rawCategories || rawCategories.length === 0) {
+          const extractedCategories: CategoryType[] = [];
+          const seenSlugs = new Set<string>();
+          mapped.forEach((item: any) => {
+            const catSlug = item.category?.slug || item.categorySlug || (item.categoryName ? item.categoryName.toLowerCase().replace(/\s+/g, "-") : null);
+            const catName = item.category?.name || item.categoryName;
+            if (catSlug && !seenSlugs.has(catSlug)) {
+              seenSlugs.add(catSlug);
+              extractedCategories.push({
+                id: item.category?.id || item.categoryId || catSlug,
+                name: catName || catSlug,
+                slug: catSlug,
+                image: null,
+                sortOrder: extractedCategories.length,
+              });
             }
+          });
+          if (extractedCategories.length > 0) {
+            setCategories(extractedCategories);
           }
         }
       }

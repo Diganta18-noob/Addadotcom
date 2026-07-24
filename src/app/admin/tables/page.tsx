@@ -270,12 +270,20 @@ export default function AdminTables() {
                     </>
                   )}
                   {table.status === "BILL_REQUESTED" && (
-                    <button
-                      onClick={() => updateStatus(table.id, "NEEDS_CLEANING")}
-                      className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-espresso text-cream rounded-lg text-xs font-medium hover:bg-espresso-500 transition-colors"
-                    >
-                      <Receipt className="w-3 h-3" /> Bill Paid
-                    </button>
+                    <>
+                      <Link
+                        href={`/admin/billing?tableId=${table.id}`}
+                        className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-caramel text-espresso rounded-lg text-xs font-bold hover:bg-caramel-300 transition-colors shadow-sm"
+                      >
+                        <Receipt className="w-3 h-3" /> Generate Bill →
+                      </Link>
+                      <button
+                        onClick={() => updateStatus(table.id, "NEEDS_CLEANING")}
+                        className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-espresso text-cream rounded-lg text-xs font-medium hover:bg-espresso-500 transition-colors"
+                      >
+                        Mark Paid
+                      </button>
+                    </>
                   )}
                   {table.status === "NEEDS_CLEANING" && (
                     <button

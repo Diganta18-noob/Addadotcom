@@ -102,42 +102,45 @@ export default function OrderPage() {
     }
   }, [orderType]);
 
-  // Sync live order status periodically if an active order exists
-  React.useEffect(() => {
-    const targetId = activeOrder?.id || activeOrder?.orderNumber;
-    if (targetId) {
-      const fetchStatus = async () => {
-        try {
-          const res = await fetch(`/api/orders/${targetId}`);
-          const data = await res.json();
-          if (data.success && data.data?.status) {
-            setLiveOrderStatus(data.data.status);
-          }
-        } catch (err) {}
-      };
-      fetchStatus();
-      const interval = setInterval(fetchStatus, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [activeOrder]);
-
   const subtotal = getSubtotal();
   const taxes = getTaxes();
   const serviceCharge = getServiceCharge();
   const total = getTotal();
 
-  const handleApplyPromo = () => {
-    if (!promoInput) return;
-    const code = promoInput.toUpperCase();
-    if (code === "WELCOME10") {
-      const discount = subtotal * 0.1;
-      setPromoCode(code, Math.min(discount, 200));
-      toast.success("10% discount applied! (Max ₹200)");
-    } else if (code === "FIRST50") {
-      setPromoCode(code, Math.min(50, subtotal));
-      toast.success("₹50 discount applied!");
-    } else {
-      toast.error("Invalid promo code");
+  const handleApplyPromo = async () => {
+    if (!promoInput.trim()) return;
+    const code = promoInput.toUpperCase().trim();
+
+    try {
+      const res = await fetch("/api/promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, amount: subtotal }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.data) {
+        const { code: validCode, type, value, maxDiscount } = data.data;
+        let discount = 0;
+        if (type === "PERCENTAGE") {
+          discount = Math.min(subtotal * (value / 100), maxDiscount || subtotal);
+        } else {
+          discount = Math.min(value, subtotal);
+        }
+        setPromoCode(validCode, discount);
+        toast.success(`Promo applied: -${formatCurrency(discount)}`);
+      } else {
+        toast.error(data.message || "Invalid or expired promo code");
+      }
+    } catch {
+      if (code === "WELCOME10") {
+        setPromoCode(code, Math.min(subtotal * 0.1, 200));
+        toast.success("10% discount applied!");
+      } else if (code === "FIRST50") {
+        setPromoCode(code, Math.min(50, subtotal));
+        toast.success("₹50 discount applied!");
+      } else {
+        toast.error("Invalid promo code");
+      }
     }
     setPromoInput("");
   };

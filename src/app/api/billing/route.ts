@@ -41,6 +41,10 @@ export const POST = apiHandler(async (request) => {
 
   const billNumber = generateBillNumber();
 
+  const paymentsArray = data.payments || [];
+  const totalPaid = paymentsArray.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+  const isPaid = totalPaid >= (data.total - 1);
+
   const bill = await prisma.bill.create({
     data: {
       billNumber,
@@ -54,20 +58,19 @@ export const POST = apiHandler(async (request) => {
       roundingAdj: data.roundingAdj || 0,
       cashierId: data.cashierId || null,
       splitConfig: data.splitConfig || null,
-      payments: data.payments || [],
-      status: data.payments && data.payments.length > 0 ? "PAID" : "UNPAID",
+      payments: paymentsArray,
+      status: isPaid ? "PAID" : "UNPAID",
     },
     include: { order: true },
   });
 
-  // If bill is paid and order is dine-in, free the table
-  if (bill.status === "PAID" && bill.order?.tableId) {
+  // Only free table and complete order if fully paid
+  if (isPaid && bill.order?.tableId) {
     await prisma.cafeTable.update({
       where: { id: bill.order.tableId },
       data: { status: "FREE" },
     });
 
-    // Mark order as completed
     await prisma.order.update({
       where: { id: data.orderId },
       data: { status: "COMPLETED" },

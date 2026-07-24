@@ -265,7 +265,7 @@ export default function TrackOrderPage() {
           {(order.bill?.billNumber || order.billNumber) && (
             <div className="pt-2">
               <Link
-                href={`/invoice?number=${order.bill?.billNumber || order.billNumber}`}
+                href={`/invoice/${order.bill?.billNumber || order.billNumber}`}
                 className="w-full flex items-center justify-center gap-2 py-3 bg-espresso hover:bg-espresso-500 text-cream rounded-xl text-xs font-bold transition-colors shadow-md"
               >
                 📄 View Official E-Receipt / Invoice
