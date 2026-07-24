@@ -51,27 +51,38 @@ export default function AdminMenuPage() {
     try {
       const res = await fetch("/api/menu");
       const data = await res.json();
-      if (data.success) {
-        // Categories list
-        const fetchedCats = (data.data.categories || []).map((c: any) => ({
-          id: c.id,
-          name: c.name,
-        }));
+      if (data.success && data.data) {
+        const rawItems = Array.isArray(data.data) ? data.data : data.data.items || [];
+        const rawCategories = data.data.categories || [];
+
+        let fetchedCats: Category[] = [];
+        if (Array.isArray(rawCategories) && rawCategories.length > 0) {
+          fetchedCats = rawCategories.map((c: any) => ({ id: c.id, name: c.name }));
+        } else {
+          const seen = new Set<string>();
+          rawItems.forEach((item: any) => {
+            const catName = item.category?.name || item.categoryName || "General";
+            const catId = item.category?.id || item.categoryId || catName;
+            if (catName && !seen.has(catName)) {
+              seen.add(catName);
+              fetchedCats.push({ id: catId, name: catName });
+            }
+          });
+        }
         setCategories(fetchedCats);
 
-        // Menu items
-        const fetchedItems = (data.data.items || []).map((item: any) => ({
+        const fetchedItems = rawItems.map((item: any) => ({
           id: item.id,
           name: item.name,
           price: item.price,
           description: item.description || "",
-          categoryId: item.categoryId,
-          categoryName: item.category?.name || "Uncategorized",
+          categoryId: item.categoryId || item.category?.id || "cat",
+          categoryName: item.category?.name || item.categoryName || "General",
           image: item.image || "",
-          isAvailable: item.isAvailable,
+          isAvailable: item.isAvailable !== false,
           tags: typeof item.tags === "string" ? item.tags.split(",").filter(Boolean) : item.tags || [],
-          variants: item.variants || [],
-          addons: item.addons || [],
+          variants: typeof item.variants === "string" ? JSON.parse(item.variants) : item.variants || [],
+          addons: typeof item.addons === "string" ? JSON.parse(item.addons) : item.addons || [],
         }));
         setItems(fetchedItems);
       }

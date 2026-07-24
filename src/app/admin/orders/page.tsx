@@ -103,12 +103,22 @@ export default function AdminOrders() {
     } catch {}
   };
 
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async (all = false) => {
     try {
-      const res = await fetch("/api/orders?today=true");
+      const endpoint = (all || showCompleted) ? "/api/orders" : "/api/orders?today=true";
+      const res = await fetch(endpoint);
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
-        const parsed = data.data.map((order: any) => ({
+        let fetchedList = data.data;
+        if (fetchedList.length === 0 && !all && !showCompleted) {
+          const fallbackRes = await fetch("/api/orders");
+          const fallbackData = await fallbackRes.json();
+          if (fallbackData.success && Array.isArray(fallbackData.data)) {
+            fetchedList = fallbackData.data;
+          }
+        }
+
+        const parsed = fetchedList.map((order: any) => ({
           ...order,
           items: typeof order.items === "string" ? JSON.parse(order.items) : order.items,
         }));
@@ -131,7 +141,7 @@ export default function AdminOrders() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showCompleted]);
 
   useSSE({
     "new-order": (data) => {

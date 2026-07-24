@@ -46,7 +46,7 @@ function LoginForm() {
       setLoading(false);
 
       if (result?.ok) {
-        router.replace(callbackUrl);
+        window.location.href = callbackUrl;
       } else {
         setError(result?.error || "Invalid email or password");
       }
