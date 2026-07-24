@@ -112,7 +112,7 @@ function AccountContent() {
         toast.error("Invalid email or password");
       } else {
         toast.success("Successfully logged in!");
-        window.location.href = callbackUrl || "/";
+        window.location.href = (callbackUrl && callbackUrl !== "/") ? callbackUrl : "/account";
       }
     } catch (err) {
       toast.error("Sign in failed. Please try again.");
