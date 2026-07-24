@@ -57,8 +57,12 @@ export default function TrackOrderPage() {
     } catch {}
   };
 
-  const fetchOrder = async () => {
+  const orderIdRef = React.useRef<string | null>(null);
+  const orderNumRef = React.useRef<string | null>(null);
+
+  const fetchOrder = async (silent = false) => {
     if (!id) return;
+    if (!silent) setLoading(true);
     try {
       const res = await fetch(`/api/orders/${id}`);
       const data = await res.json();
@@ -68,25 +72,33 @@ export default function TrackOrderPage() {
           items: typeof data.data.items === "string" ? JSON.parse(data.data.items) : data.data.items,
         };
         setOrder(parsed);
+        orderIdRef.current = parsed.id;
+        orderNumRef.current = parsed.orderNumber;
 
         if (parsed.status === "READY" && !showCelebration) {
           setShowCelebration(true);
           playChime();
         }
-      } else {
+      } else if (!silent) {
         setError(data.message || "Order not found");
       }
     } catch (err) {
       console.error("Error fetching order:", err);
-      setError("Unable to connect to order tracking service");
+      if (!silent) setError("Unable to connect to order tracking service");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useSSE({
     "order-updated": (data) => {
-      if (data.orderId === id || data.orderNumber === id || order?.id === data.orderId) {
+      const matches =
+        data.orderId === id ||
+        data.orderNumber === id ||
+        data.orderId === orderIdRef.current ||
+        data.orderNumber === orderNumRef.current;
+
+      if (matches) {
         setOrder((prev: any) => (prev ? { ...prev, status: data.status } : prev));
         if (data.status === "READY") {
           setShowCelebration(true);
@@ -95,7 +107,13 @@ export default function TrackOrderPage() {
       }
     },
     "bill-paid": (data) => {
-      if (data.orderId === order?.id || data.orderId === id) {
+      const matches =
+        data.orderId === id ||
+        data.orderNumber === id ||
+        data.orderId === orderIdRef.current ||
+        data.orderNumber === orderNumRef.current;
+
+      if (matches) {
         setOrder((prev: any) =>
           prev ? { ...prev, status: "COMPLETED", billNumber: data.billNumber } : prev
         );
@@ -106,6 +124,16 @@ export default function TrackOrderPage() {
   useEffect(() => {
     fetchOrder();
   }, [id]);
+
+  useEffect(() => {
+    if (!id || !order || ["COMPLETED", "CANCELLED"].includes(order.status)) return;
+
+    const interval = setInterval(() => {
+      fetchOrder(true);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [id, order?.status]);
 
   if (loading) {
     return (

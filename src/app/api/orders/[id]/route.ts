@@ -35,13 +35,16 @@ export const PUT = apiHandler(async (request, context: any) => {
   const body = await request.json();
   const data = updateOrderSchema.parse(body);
 
-  const existing = await prisma.order.findUnique({ where: { id } });
+  let existing = await prisma.order.findUnique({ where: { id } });
+  if (!existing) {
+    existing = await prisma.order.findUnique({ where: { orderNumber: id } });
+  }
   if (!existing) {
     throw new ApiError(404, "NOT_FOUND", "Order not found");
   }
 
   const order = await prisma.order.update({
-    where: { id },
+    where: { id: existing.id },
     data: {
       ...(data.status && { status: data.status }),
       ...(data.notes !== undefined && { notes: data.notes }),
