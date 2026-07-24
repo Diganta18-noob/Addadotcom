@@ -6,15 +6,17 @@ export const revalidate = 0;
 
 export const GET = apiHandler(async (request) => {
   const { searchParams } = new URL(request.url);
-  const number = searchParams.get("number") || searchParams.get("id");
+  const rawNumber = searchParams.get("number") || searchParams.get("id");
 
-  if (!number) {
+  if (!rawNumber) {
     throw new ApiError(400, "BAD_REQUEST", "Invoice or bill number is required");
   }
 
-  // 1. Search by bill number first
+  const number = decodeURIComponent(rawNumber.trim());
+
+  // 1. Search by bill number first (case-insensitive)
   let bill: any = await prisma.bill.findFirst({
-    where: { billNumber: number },
+    where: { billNumber: { equals: number, mode: "insensitive" } },
     include: {
       order: {
         include: {

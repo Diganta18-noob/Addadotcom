@@ -86,12 +86,19 @@ export default function TrackOrderPage() {
 
   useSSE({
     "order-updated": (data) => {
-      if (data.orderId === id || data.orderNumber === id) {
+      if (data.orderId === id || data.orderNumber === id || order?.id === data.orderId) {
         setOrder((prev: any) => (prev ? { ...prev, status: data.status } : prev));
         if (data.status === "READY") {
           setShowCelebration(true);
           playChime();
         }
+      }
+    },
+    "bill-paid": (data) => {
+      if (data.orderId === order?.id || data.orderId === id) {
+        setOrder((prev: any) =>
+          prev ? { ...prev, status: "COMPLETED", billNumber: data.billNumber } : prev
+        );
       }
     },
   });
@@ -254,6 +261,17 @@ export default function TrackOrderPage() {
               <span className="font-serif text-caramel">{formatCurrency(totalAmount)}</span>
             </div>
           </div>
+
+          {(order.bill?.billNumber || order.billNumber) && (
+            <div className="pt-2">
+              <Link
+                href={`/invoice?number=${order.bill?.billNumber || order.billNumber}`}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-espresso hover:bg-espresso-500 text-cream rounded-xl text-xs font-bold transition-colors shadow-md"
+              >
+                📄 View Official E-Receipt / Invoice
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

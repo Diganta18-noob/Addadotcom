@@ -34,6 +34,8 @@ interface Reservation {
   table?: { number: number } | null;
 }
 
+import { useSmartRefresh } from "@/lib/useSmartRefresh";
+
 export default function AdminReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +71,8 @@ export default function AdminReservationsPage() {
     }
   }, []);
 
+  const { refresh, isRefreshing } = useSmartRefresh(fetchReservations, 2000);
+
   useSSE({
     "reservation-created": () => fetchReservations(),
     "reservation-updated": () => fetchReservations(),
@@ -76,6 +80,8 @@ export default function AdminReservationsPage() {
 
   useEffect(() => {
     fetchReservations();
+    const interval = setInterval(fetchReservations, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [fetchReservations]);
 
   const handleStatusChange = async (id: string, status: Reservation["status"]) => {
@@ -193,11 +199,12 @@ export default function AdminReservationsPage() {
 
         <div className="flex gap-2 ml-auto">
           <button
-            onClick={() => { setLoading(true); fetchReservations(); }}
-            className="px-3 py-2 bg-muted border border-border rounded-lg text-sm hover:bg-muted/80 transition-colors"
+            onClick={refresh}
+            disabled={isRefreshing}
+            className="px-3 py-2 bg-muted border border-border rounded-lg text-sm hover:bg-muted/80 transition-colors disabled:opacity-50"
             title="Refresh"
           >
-            <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+            <RefreshCw className={cn("w-4 h-4", (loading || isRefreshing) && "animate-spin")} />
           </button>
           <button
             onClick={() => setIsAdding(true)}

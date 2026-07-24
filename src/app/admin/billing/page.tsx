@@ -67,7 +67,12 @@ interface OrderData {
   notes: string | null;
 }
 
+import { useSearchParams } from "next/navigation";
+
 export default function AdminBilling() {
+  const searchParams = useSearchParams();
+  const tableIdParam = searchParams?.get("tableId");
+
   const [isMounted, setIsMounted] = useState(false);
   const [tables, setTables] = useState<TableData[]>([]);
   const [orders, setOrders] = useState<OrderData[]>([]);
@@ -102,24 +107,26 @@ export default function AdminBilling() {
   // Receipt UI
   const [showReceipt, setShowReceipt] = useState(false);
 
-  // Fetch initial data using pure async/await with explicit error handling (No Promise.all)
+  // Fetch initial data
   const fetchData = useCallback(async () => {
     setLoading(true);
     
-    // 1. Fetch tables
     try {
       const tablesRes = await fetch("/api/tables");
       if (!tablesRes.ok) throw new Error(`Tables API error: ${tablesRes.status}`);
       const tablesData = await tablesRes.json();
       if (tablesData.success && Array.isArray(tablesData.data)) {
         setTables(tablesData.data);
-        setSelectedTableId((prev) => prev || (tablesData.data.length > 0 ? tablesData.data[0].id : ""));
+        if (tableIdParam) {
+          setSelectedTableId(tableIdParam);
+        } else {
+          setSelectedTableId((prev) => prev || (tablesData.data.length > 0 ? tablesData.data[0].id : ""));
+        }
       }
     } catch (error) {
       console.error("Error fetching tables in billing:", error);
     }
 
-    // 2. Fetch orders
     try {
       const ordersRes = await fetch("/api/orders?today=true");
       if (!ordersRes.ok) throw new Error(`Orders API error: ${ordersRes.status}`);
@@ -136,14 +143,13 @@ export default function AdminBilling() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tableIdParam]);
 
   useEffect(() => {
     setIsMounted(true);
     fetchData();
   }, [fetchData]);
 
-  // Update billing state when selected table or orders change
   useEffect(() => {
     if (!selectedTableId || orders.length === 0) {
       setActiveOrder(null);
@@ -152,11 +158,9 @@ export default function AdminBilling() {
       return;
     }
 
-    // Find the active DINE_IN order for this table
     const tableOrder = orders.find(
       (o) =>
-        o.tableId === selectedTableId &&
-        o.type === "DINE_IN" &&
+        (o.tableId === selectedTableId || (o.type === "DINE_IN" && !o.tableId)) &&
         !["COMPLETED", "CANCELLED"].includes(o.status)
     );
 
@@ -289,6 +293,7 @@ export default function AdminBilling() {
         const data = await res.json();
         if (data.success) {
           setBillPaid(true);
+          setShowReceipt(true);
           toast.success("Bill paid in full and saved!");
           fetchData(); // Refresh tables and orders
         } else {

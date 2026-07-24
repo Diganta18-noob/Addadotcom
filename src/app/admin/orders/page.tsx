@@ -82,6 +82,8 @@ export default function AdminOrders() {
   const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null);
 
 
+  const [showCompleted, setShowCompleted] = useState(false);
+
   const previousOrderIdsRef = React.useRef<Set<string>>(new Set());
 
   const playChime = () => {
@@ -92,8 +94,8 @@ export default function AdminOrders() {
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.type = "sine";
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15); // A5
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
       gain.gain.setValueAtTime(0.3, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
       osc.start();
@@ -111,7 +113,6 @@ export default function AdminOrders() {
           items: typeof order.items === "string" ? JSON.parse(order.items) : order.items,
         }));
 
-        // Detect newly placed orders
         if (previousOrderIdsRef.current.size > 0) {
           const newOrders = parsed.filter((o: any) => !previousOrderIdsRef.current.has(o.id));
           if (newOrders.length > 0) {
@@ -138,8 +139,14 @@ export default function AdminOrders() {
       playChime();
       toast.success(`🔔 NEW ORDER: ${data.orderNumber} (${data.type})!`, { duration: 6000 });
     },
-    "order-updated": () => {
-      fetchOrders();
+    "order-updated": (data) => {
+      if (data?.orderId && data?.status) {
+        setOrders((prev) =>
+          prev.map((o) => (o.id === data.orderId ? { ...o, status: data.status } : o))
+        );
+      } else {
+        fetchOrders();
+      }
     },
   });
 
@@ -147,7 +154,12 @@ export default function AdminOrders() {
     fetchOrders();
   }, [fetchOrders]);
 
+  const completedTodayCount = orders.filter((o) => o.status === "COMPLETED").length;
+
   const filteredOrders = orders.filter((o) => {
+    if (!showCompleted && filterStatus === "ALL" && ["COMPLETED", "CANCELLED"].includes(o.status)) {
+      return false;
+    }
     if (filterStatus !== "ALL" && o.status !== filterStatus) return false;
     if (filterType !== "ALL" && o.type !== filterType) return false;
     if (searchQuery && !o.orderNumber.toLowerCase().includes(searchQuery.toLowerCase())) return false;
@@ -226,6 +238,17 @@ export default function AdminOrders() {
           >
             View Full History →
           </Link>
+          <button
+            onClick={() => setShowCompleted(!showCompleted)}
+            className={cn(
+              "px-3 py-2 rounded-lg text-xs font-semibold border transition-all",
+              showCompleted
+                ? "bg-espresso text-cream border-espresso"
+                : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+            )}
+          >
+            {showCompleted ? "Hide Completed" : `Show Completed (${completedTodayCount})`}
+          </button>
         </div>
 
         <div className="flex gap-2 flex-wrap">

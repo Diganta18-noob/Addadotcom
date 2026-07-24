@@ -57,8 +57,13 @@ export function Navbar() {
 
   useEffect(() => {
     setMounted(true);
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+      if (window.scrollY < 100) {
+        setActiveSection("");
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -80,14 +85,21 @@ export function Navbar() {
           }
         });
       },
-      { rootMargin: "-30% 0px -60% 0px" }
+      { rootMargin: "-20% 0px -70% 0px", threshold: 0 }
     );
 
-    const aboutSec = document.getElementById("about");
-    if (aboutSec) observer.observe(aboutSec);
+    const sectionIds = ["about", "featured", "testimonials", "location"];
+    const elements: HTMLElement[] = [];
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        observer.observe(el);
+        elements.push(el);
+      }
+    });
 
     return () => {
-      if (aboutSec) observer.unobserve(aboutSec);
+      elements.forEach((el) => observer.unobserve(el));
     };
   }, [pathname]);
 

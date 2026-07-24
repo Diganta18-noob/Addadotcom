@@ -28,10 +28,17 @@ function HeroSection() {
   const y = useTransform(scrollY, [0, 500], [0, 150]);
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.history.scrollRestoration = "manual";
+      window.scrollTo(0, 0);
+    }
+  }, []);
+
   return (
-    <section className="relative h-screen min-h-[600px] max-h-[900px] flex items-center overflow-hidden">
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-espresso">
       {/* Background Image */}
-      <motion.div style={{ y }} className="absolute inset-0 z-0">
+      <motion.div style={{ y }} className="absolute -top-32 -bottom-32 inset-x-0 z-0">
         <Image
           src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1920&q=80"
           alt="Café background"
@@ -361,6 +368,26 @@ const testimonials = [
 
 function TestimonialsSection() {
   const testimonialsGridRef = useScrollReveal<HTMLDivElement>(0.15);
+  const [reviewsList, setReviewsList] = useState(testimonials);
+
+  useEffect(() => {
+    fetch("/api/reviews?limit=6")
+      .then((r) => r.json())
+      .then(({ data }) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setReviewsList(
+            data.map((r: any) => ({
+              name: r.author || "Valued Customer",
+              role: "Verified Guest",
+              avatar: (r.author || "VG").slice(0, 2).toUpperCase(),
+              rating: r.rating || 5,
+              text: r.comment || r.text || "Loved the experience at AddaDotCom!",
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <section className="py-20 lg:py-28">
@@ -375,9 +402,9 @@ function TestimonialsSection() {
         </div>
 
         <div ref={testimonialsGridRef} className="grid md:grid-cols-3 gap-6">
-          {testimonials.map((testimonial) => (
+          {reviewsList.map((testimonial, idx) => (
             <div
-              key={testimonial.name}
+              key={idx}
               data-reveal
               className="p-6 rounded-2xl border border-border bg-card hover:shadow-lg transition-all"
             >

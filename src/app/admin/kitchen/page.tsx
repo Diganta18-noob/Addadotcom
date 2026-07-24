@@ -124,6 +124,12 @@ export default function KitchenKDSPage() {
     }
   }, []);
 
+  const [, forceUpdate] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => forceUpdate((n) => n + 1), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Real-time SSE subscriber
   useSSE({
     "new-order": (data) => {
@@ -131,7 +137,8 @@ export default function KitchenKDSPage() {
       playChime();
       toast.success(`🔔 NEW KITCHEN TICKET: ${data.orderNumber}`, { duration: 6000 });
       setTimeout(() => {
-        if (data.id) animateNewTicket(data.id);
+        const ticketId = data.orderId || data.id;
+        if (ticketId) animateNewTicket(ticketId);
       }, 150);
     },
     "order-updated": () => {

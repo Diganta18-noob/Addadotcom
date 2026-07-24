@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared";
@@ -253,12 +254,20 @@ export default function AdminTables() {
                     </>
                   )}
                   {table.status === "OCCUPIED" && (
-                    <button
-                      onClick={() => updateStatus(table.id, "BILL_REQUESTED")}
-                      className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition-colors"
-                    >
-                      <Receipt className="w-3 h-3" /> Request Bill
-                    </button>
+                    <>
+                      <Link
+                        href={`/admin/billing?tableId=${table.id}`}
+                        className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-caramel text-espresso rounded-lg text-xs font-bold hover:bg-caramel-300 transition-colors shadow-sm"
+                      >
+                        <Receipt className="w-3 h-3" /> Generate Bill →
+                      </Link>
+                      <button
+                        onClick={() => updateStatus(table.id, "BILL_REQUESTED")}
+                        className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition-colors"
+                      >
+                        Request Bill
+                      </button>
+                    </>
                   )}
                   {table.status === "BILL_REQUESTED" && (
                     <button
