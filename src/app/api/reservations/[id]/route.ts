@@ -53,12 +53,45 @@ export const PUT = apiHandler(async (request, { params }) => {
     include: { table: true },
   });
 
-  // If marking as seated, update table status
+  // Handle table status changes & SSE broadcasts
   if (data.status === "SEATED" && reservation.tableId) {
     await prisma.cafeTable.update({
       where: { id: reservation.tableId },
       data: { status: "OCCUPIED" },
     });
+    try {
+      const { broadcast } = await import("@/lib/sse-emitter");
+      broadcast("table-updated", {
+        tableId: reservation.tableId,
+        tableNumber: reservation.table?.number,
+        status: "OCCUPIED",
+      });
+      broadcast("reservation-updated", {
+        id: reservation.id,
+        status: reservation.status,
+        tableId: reservation.tableId,
+      });
+    } catch (e) {}
+  }
+
+  if (data.status === "CANCELLED" && existing.tableId && existing.status !== "CANCELLED") {
+    await prisma.cafeTable.update({
+      where: { id: existing.tableId },
+      data: { status: "FREE" },
+    });
+    try {
+      const { broadcast } = await import("@/lib/sse-emitter");
+      broadcast("table-updated", {
+        tableId: existing.tableId,
+        tableNumber: reservation.table?.number,
+        status: "FREE",
+      });
+      broadcast("reservation-updated", {
+        id: reservation.id,
+        status: reservation.status,
+        tableId: existing.tableId,
+      });
+    } catch (e) {}
   }
 
   return { data: reservation };

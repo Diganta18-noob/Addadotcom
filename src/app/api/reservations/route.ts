@@ -85,20 +85,43 @@ export const POST = apiHandler(async (request) => {
       where: { id: availableTable.id },
       data: { status: "RESERVED" },
     });
-  }
 
-  // Broadcast real-time SSE event
-  try {
-    const { broadcast } = await import("@/lib/sse-emitter");
-    broadcast("reservation-created", {
-      id: reservation.id,
-      guestName: reservation.guestName,
-      date: reservation.date,
-      timeSlot: reservation.timeSlot,
-      partySize: reservation.partySize,
-    });
-  } catch (e) {
-    console.error("SSE Broadcast Error:", e);
+    try {
+      const { broadcast } = await import("@/lib/sse-emitter");
+
+      broadcast("table-updated", {
+        tableId: availableTable.id,
+        tableNumber: availableTable.number,
+        status: "RESERVED",
+        zone: availableTable.zone,
+        capacity: availableTable.capacity,
+      });
+
+      broadcast("reservation-created", {
+        id: reservation.id,
+        guestName: reservation.guestName,
+        date: reservation.date,
+        timeSlot: reservation.timeSlot,
+        partySize: reservation.partySize,
+        tableId: availableTable.id,
+        tableNumber: availableTable.number,
+      });
+    } catch (e) {
+      console.error("SSE Broadcast Error:", e);
+    }
+  } else {
+    try {
+      const { broadcast } = await import("@/lib/sse-emitter");
+      broadcast("reservation-created", {
+        id: reservation.id,
+        guestName: reservation.guestName,
+        date: reservation.date,
+        timeSlot: reservation.timeSlot,
+        partySize: reservation.partySize,
+      });
+    } catch (e) {
+      console.error("SSE Broadcast Error:", e);
+    }
   }
 
   return { data: reservation, status: 201 };

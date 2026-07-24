@@ -66,11 +66,65 @@ export default function AdminTables() {
     }
   }, []);
 
-  // Real-time SSE listener
+  // Real-time SSE listener with surgical state updates
   useSSE({
-    "table-updated": () => fetchTables(),
-    "bill-paid": () => fetchTables(),
-    "new-order": () => fetchTables(),
+    "table-updated": (data) => {
+      if (data?.tableId && data?.status) {
+        setTables((prev) =>
+          prev.map((t) =>
+            t.id === data.tableId || t.number === data.tableNumber
+              ? { ...t, status: data.status as TableStatus }
+              : t
+          )
+        );
+      } else {
+        fetchTables();
+      }
+    },
+    "reservation-created": (data) => {
+      if (data?.tableId) {
+        setTables((prev) =>
+          prev.map((t) =>
+            t.id === data.tableId || t.number === data.tableNumber
+              ? { ...t, status: "RESERVED" as TableStatus }
+              : t
+          )
+        );
+      } else {
+        fetchTables();
+      }
+    },
+    "reservation-updated": (data) => {
+      if (data?.tableId) {
+        fetchTables();
+      }
+    },
+    "bill-paid": (data) => {
+      if (data?.tableId) {
+        setTables((prev) =>
+          prev.map((t) =>
+            t.id === data.tableId
+              ? { ...t, status: "FREE" as TableStatus }
+              : t
+          )
+        );
+      } else {
+        fetchTables();
+      }
+    },
+    "new-order": (data) => {
+      if (data?.tableId) {
+        setTables((prev) =>
+          prev.map((t) =>
+            t.id === data.tableId
+              ? { ...t, status: "OCCUPIED" as TableStatus }
+              : t
+          )
+        );
+      } else {
+        fetchTables();
+      }
+    },
   });
 
   useEffect(() => {

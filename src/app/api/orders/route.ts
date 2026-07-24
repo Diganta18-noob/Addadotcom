@@ -103,6 +103,7 @@ export const POST = apiHandler(async (request) => {
       orderId: order.id,
       orderNumber: order.orderNumber,
       type: order.type,
+      tableId: resolvedTableId || null,
       tableNumber: order.table?.number || null,
       itemCount: Array.isArray(data.items) ? data.items.length : 0,
     });
