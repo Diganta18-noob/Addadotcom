@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { AdminSidebar, AdminTopbar } from "@/components/layout/AdminSidebar";
+import { AdminNotifier } from "@/components/admin/AdminNotifier";
 import { cn } from "@/lib/utils";
 import { ShieldAlert, LogIn } from "lucide-react";
 
@@ -58,7 +59,7 @@ export default function AdminLayout({
             </p>
           </div>
           <button
-            onClick={() => router.push("/account?callbackUrl=/admin")}
+            onClick={() => router.push("/login?callbackUrl=/admin")}
             className="w-full py-3 bg-espresso text-cream rounded-xl text-sm font-bold hover:bg-espresso-500 transition-colors flex items-center justify-center gap-2"
           >
             <LogIn className="w-4 h-4" /> Sign In as Admin
@@ -71,6 +72,7 @@ export default function AdminLayout({
   // 4. Authorized Admin Layout
   return (
     <div className="min-h-screen bg-background">
+      <AdminNotifier />
       <AdminSidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
       <AdminTopbar sidebarCollapsed={collapsed} />
       <main
