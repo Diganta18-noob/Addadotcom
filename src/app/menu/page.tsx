@@ -483,6 +483,12 @@ export default function MenuPage() {
   const fetchMenu = useCallback(async () => {
     try {
       const res = await fetch("/api/menu");
+      const contentType = res.headers.get("content-type");
+
+      if (!res.ok || !contentType?.includes("application/json")) {
+        throw new Error(`Non-JSON or error status: ${res.status}`);
+      }
+
       const data = await res.json();
 
       if (data.success && data.data) {
@@ -518,10 +524,18 @@ export default function MenuPage() {
               setCategories(extractedCategories);
             }
           }
+        } else {
+          setItems(demoItems.map(normalizeMenuItem));
+          setCategories(demoCategories);
         }
+      } else {
+        setItems(demoItems.map(normalizeMenuItem));
+        setCategories(demoCategories);
       }
     } catch (error) {
       console.error("Failed to load menu API, using demo data fallback.", error);
+      setItems(demoItems.map(normalizeMenuItem));
+      setCategories(demoCategories);
     } finally {
       setLoading(false);
     }
