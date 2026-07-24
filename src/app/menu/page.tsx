@@ -449,20 +449,49 @@ export default function MenuPage() {
     try {
       const res = await fetch("/api/menu");
       const data = await res.json();
+
       if (data.success && data.data) {
-        if (data.data.categories && data.data.categories.length > 0) {
-          setCategories(data.data.categories);
+        const rawItems = Array.isArray(data.data) ? data.data : data.data.items || [];
+        const rawCategories = data.data.categories;
+
+        if (Array.isArray(rawCategories) && rawCategories.length > 0) {
+          setCategories(rawCategories);
         }
-        if (data.data.items && data.data.items.length > 0) {
-          const mapped = data.data.items.map((item: any) => ({
+
+        if (Array.isArray(rawItems) && rawItems.length > 0) {
+          const mapped = rawItems.map((item: any) => ({
             ...item,
             tags: typeof item.tags === "string" ? item.tags.split(",").filter(Boolean) : item.tags || [],
+            variants: typeof item.variants === "string" ? JSON.parse(item.variants) : item.variants || [],
+            addons: typeof item.addons === "string" ? JSON.parse(item.addons) : item.addons || [],
           }));
           setItems(mapped);
+
+          if (!rawCategories || rawCategories.length === 0) {
+            const extractedCategories: CategoryType[] = [];
+            const seenSlugs = new Set<string>();
+            mapped.forEach((item: any) => {
+              const catSlug = item.category?.slug || item.categorySlug;
+              const catName = item.category?.name || item.categoryName;
+              if (catSlug && !seenSlugs.has(catSlug)) {
+                seenSlugs.add(catSlug);
+                extractedCategories.push({
+                  id: item.category?.id || item.categoryId,
+                  name: catName || catSlug,
+                  slug: catSlug,
+                  image: null,
+                  sortOrder: extractedCategories.length,
+                });
+              }
+            });
+            if (extractedCategories.length > 0) {
+              setCategories(extractedCategories);
+            }
+          }
         }
       }
     } catch (error) {
-      console.error("Failed to load menu API, using local demo data.", error);
+      console.error("Failed to load menu API, using demo data fallback.", error);
     } finally {
       setLoading(false);
     }
@@ -478,7 +507,12 @@ export default function MenuPage() {
 
     if (activeCategory !== "all") {
       const cat = categories.find((c) => c.slug === activeCategory);
-      if (cat) result = result.filter((i) => i.categoryId === cat.id);
+      result = result.filter(
+        (i) =>
+          i.category?.slug === activeCategory ||
+          i.categoryId === activeCategory ||
+          (cat && i.categoryId === cat.id)
+      );
     }
 
     if (searchQuery) {
@@ -661,7 +695,7 @@ export default function MenuPage() {
           <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <AnimatePresence mode="popLayout">
               {filteredItems
-                .filter((i) => !i.isSpecial || activeCategory !== "all" || searchQuery || activeTags.length > 0)
+                .filter((i) => (specials.length > 0 ? !i.isSpecial : true) || activeCategory !== "all" || searchQuery || activeTags.length > 0)
                 .map((item) => (
                   <MenuCard key={item.id} item={item} onOpenDetail={setSelectedItem} />
                 ))}
