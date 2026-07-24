@@ -68,8 +68,11 @@ interface OrderData {
 }
 
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function AdminBilling() {
+export const dynamic = "force-dynamic";
+
+function AdminBillingContent() {
   const searchParams = useSearchParams();
   const tableIdParam = searchParams?.get("tableId");
 
@@ -719,6 +722,20 @@ export default function AdminBilling() {
         />
       )}
     </div>
+  );
+}
+
+export default function AdminBilling() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-caramel" />
+        </div>
+      }
+    >
+      <AdminBillingContent />
+    </Suspense>
   );
 }
 
