@@ -135,7 +135,7 @@ function MenuCard({ item, onOpenDetail }: { item: MenuItemType; onOpenDetail: (i
         <div className="p-4">
           {/* Tags */}
           <div className="flex flex-wrap gap-1 mb-2">
-            {item.tags.map((tag) => (
+            {(item.tags || []).map((tag) => (
               <DietaryTag key={tag} tag={tag} />
             ))}
           </div>
@@ -148,7 +148,7 @@ function MenuCard({ item, onOpenDetail }: { item: MenuItemType; onOpenDetail: (i
               <span className="text-lg font-bold text-caramel font-sans">
                 {formatCurrency(item.price)}
               </span>
-              {item.variants.length > 0 && (
+              {(item.variants || []).length > 0 && (
                 <span className="text-xs text-muted-foreground ml-1">onwards</span>
               )}
             </div>
@@ -280,7 +280,7 @@ function ItemDetailModal({
             <X className="w-4 h-4" />
           </button>
           <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5">
-            {item.tags.map((tag) => (
+            {(item.tags || []).map((tag) => (
               <DietaryTag key={tag} tag={tag} />
             ))}
           </div>
@@ -300,11 +300,11 @@ function ItemDetailModal({
           </div>
 
           {/* Variants */}
-          {item.variants.map((variant: MenuVariant) => (
+          {(item.variants || []).map((variant: MenuVariant) => (
             <div key={variant.name}>
               <h3 className="text-sm font-semibold mb-3">{variant.name}</h3>
               <div className="flex flex-wrap gap-2">
-                {variant.options.map((option) => (
+                {(variant.options || []).map((option) => (
                   <button
                     key={option.label}
                     onClick={() =>
@@ -333,11 +333,11 @@ function ItemDetailModal({
           ))}
 
           {/* Addons */}
-          {item.addons.length > 0 && (
+          {(item.addons || []).length > 0 && (
             <div>
               <h3 className="text-sm font-semibold mb-3">Add-ons</h3>
               <div className="space-y-2">
-                {item.addons.map((addon: MenuAddon) => (
+                {(item.addons || []).map((addon: MenuAddon) => (
                   <label
                     key={addon.name}
                     className={cn(
@@ -433,6 +433,41 @@ function ItemDetailModal({
 
 // ─── Main Menu Page ─────────────────────────────────────────
 
+function normalizeMenuItem(item: any): MenuItemType {
+  const safeTags = typeof item?.tags === "string"
+    ? item.tags.split(",").filter(Boolean)
+    : Array.isArray(item?.tags) ? item.tags : [];
+
+  let safeVariants: any[] = [];
+  if (typeof item?.variants === "string") {
+    try { safeVariants = JSON.parse(item.variants); } catch { safeVariants = []; }
+  } else if (Array.isArray(item?.variants)) {
+    safeVariants = item.variants;
+  }
+
+  let safeAddons: any[] = [];
+  if (typeof item?.addons === "string") {
+    try { safeAddons = JSON.parse(item.addons); } catch { safeAddons = []; }
+  } else if (Array.isArray(item?.addons)) {
+    safeAddons = item.addons;
+  }
+
+  return {
+    ...item,
+    id: item?.id || String(Math.random()),
+    name: item?.name || "Untitled Item",
+    slug: item?.slug || "",
+    description: item?.description || "",
+    price: typeof item?.price === "number" ? item.price : 0,
+    tags: safeTags,
+    variants: safeVariants,
+    addons: safeAddons,
+    isAvailable: item?.isAvailable !== false,
+    isSpecial: Boolean(item?.isSpecial),
+    isBestseller: Boolean(item?.isBestseller),
+  };
+}
+
 export default function MenuPage() {
   const [categories, setCategories] = useState<CategoryType[]>(demoCategories);
   const [items, setItems] = useState<MenuItemType[]>(demoItems);
@@ -459,12 +494,7 @@ export default function MenuPage() {
         }
 
         if (Array.isArray(rawItems) && rawItems.length > 0) {
-          const mapped = rawItems.map((item: any) => ({
-            ...item,
-            tags: typeof item.tags === "string" ? item.tags.split(",").filter(Boolean) : item.tags || [],
-            variants: typeof item.variants === "string" ? JSON.parse(item.variants) : item.variants || [],
-            addons: typeof item.addons === "string" ? JSON.parse(item.addons) : item.addons || [],
-          }));
+          const mapped = rawItems.map(normalizeMenuItem);
           setItems(mapped);
 
           if (!rawCategories || rawCategories.length === 0) {
