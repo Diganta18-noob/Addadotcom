@@ -67,6 +67,8 @@ const demoItems: MenuItemType[] = [
 
 // ─── Menu Card Component ────────────────────────────────────
 
+import { TiltCard } from "@/components/animations/TiltCard";
+
 function MenuCard({ item, onOpenDetail }: { item: MenuItemType; onOpenDetail: (item: MenuItemType) => void }) {
   const defaultFallback = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80";
   const [imgSrc, setImgSrc] = useState(item.image || defaultFallback);
@@ -76,95 +78,97 @@ function MenuCard({ item, onOpenDetail }: { item: MenuItemType; onOpenDetail: (i
   }, [item.image]);
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className={cn(
-        "group rounded-2xl overflow-hidden border border-border bg-card hover:shadow-xl hover:shadow-espresso/5 transition-all duration-300 hover:-translate-y-1",
-        !item.isAvailable && "opacity-60"
-      )}
-    >
-      {/* Image */}
-      <div className="relative aspect-[4/3] overflow-hidden">
-        <Image
-          src={imgSrc}
-          onError={() => setImgSrc(defaultFallback)}
-          alt={item.name}
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-
-        {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-          {item.isBestseller && (
-            <span className="px-2.5 py-1 bg-caramel text-espresso text-[10px] font-bold rounded-full flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> Bestseller
-            </span>
-          )}
-          {item.isSpecial && (
-            <span className="px-2.5 py-1 bg-espresso text-caramel text-[10px] font-bold rounded-full">
-              Chef&apos;s Special
-            </span>
-          )}
-        </div>
-
-        {!item.isAvailable && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-full">
-              Sold Out
-            </span>
-          </div>
+    <TiltCard>
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className={cn(
+          "group rounded-2xl overflow-hidden border border-border bg-card hover:shadow-xl hover:shadow-espresso/5 transition-all duration-300",
+          !item.isAvailable && "opacity-60"
         )}
+      >
+        {/* Image */}
+        <div className="relative aspect-[4/3] overflow-hidden">
+          <Image
+            src={imgSrc}
+            onError={() => setImgSrc(defaultFallback)}
+            alt={item.name}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+          />
 
-        {/* Prep time */}
-        {item.prepTime && item.isAvailable && (
-          <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium rounded-full">
-            <Clock className="w-3 h-3" />
-            {item.prepTime} min
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="p-4">
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1 mb-2">
-          {item.tags.map((tag) => (
-            <DietaryTag key={tag} tag={tag} />
-          ))}
-        </div>
-
-        <h3 className="font-serif text-base font-semibold line-clamp-1">{item.name}</h3>
-        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
-
-        <div className="flex items-center justify-between mt-4">
-          <div>
-            <span className="text-lg font-bold text-caramel font-sans">
-              {formatCurrency(item.price)}
-            </span>
-            {item.variants.length > 0 && (
-              <span className="text-xs text-muted-foreground ml-1">onwards</span>
+          {/* Badges */}
+          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+            {item.isBestseller && (
+              <span className="px-2.5 py-1 bg-caramel text-espresso text-[10px] font-bold rounded-full flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> Bestseller
+              </span>
+            )}
+            {item.isSpecial && (
+              <span className="px-2.5 py-1 bg-espresso text-caramel text-[10px] font-bold rounded-full">
+                Chef&apos;s Special
+              </span>
             )}
           </div>
 
-          <button
-            onClick={() => onOpenDetail(item)}
-            disabled={!item.isAvailable}
-            className={cn(
-              "px-4 py-2 rounded-full text-xs font-semibold transition-all",
-              item.isAvailable
-                ? "bg-espresso text-cream hover:bg-espresso-500 hover:shadow-md"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
-            )}
-          >
-            {item.isAvailable ? "Add to Cart" : "Unavailable"}
-          </button>
+          {!item.isAvailable && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <span className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-full">
+                Sold Out
+              </span>
+            </div>
+          )}
+
+          {/* Prep time */}
+          {item.prepTime && item.isAvailable && (
+            <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium rounded-full">
+              <Clock className="w-3 h-3" />
+              {item.prepTime} min
+            </div>
+          )}
         </div>
-      </div>
-    </motion.div>
+
+        {/* Content */}
+        <div className="p-4">
+          {/* Tags */}
+          <div className="flex flex-wrap gap-1 mb-2">
+            {item.tags.map((tag) => (
+              <DietaryTag key={tag} tag={tag} />
+            ))}
+          </div>
+
+          <h3 className="font-serif text-base font-semibold line-clamp-1">{item.name}</h3>
+          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
+
+          <div className="flex items-center justify-between mt-4">
+            <div>
+              <span className="text-lg font-bold text-caramel font-sans">
+                {formatCurrency(item.price)}
+              </span>
+              {item.variants.length > 0 && (
+                <span className="text-xs text-muted-foreground ml-1">onwards</span>
+              )}
+            </div>
+
+            <button
+              onClick={() => onOpenDetail(item)}
+              disabled={!item.isAvailable}
+              className={cn(
+                "px-4 py-2 rounded-full text-xs font-semibold transition-all",
+                item.isAvailable
+                  ? "bg-espresso text-cream hover:bg-espresso-500 hover:shadow-md"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              )}
+            >
+              {item.isAvailable ? "Add to Cart" : "Unavailable"}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </TiltCard>
   );
 }
 

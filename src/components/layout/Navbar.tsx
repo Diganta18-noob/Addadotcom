@@ -19,6 +19,9 @@ import {
 import { useCartStore, useUIStore } from "@/store";
 import { cn } from "@/lib/utils";
 
+import { gsap } from "gsap";
+import { isMotionReduced } from "@/lib/motion-safe";
+
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/menu", label: "Menu" },
@@ -33,10 +36,24 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false);
   const [activeSection, setActiveSection] = useState("");
   const { isMobileMenuOpen, toggleMobileMenu, closeMobileMenu, toggleCart, isDarkMode, toggleDarkMode } = useUIStore();
+  const logoRef = React.useRef<HTMLSpanElement>(null);
   
   const rawItemCount = useCartStore((s) => s.getItemCount());
   const itemCount = mounted ? rawItemCount : 0;
   const isDarkModeVal = mounted ? isDarkMode : false;
+
+  const handleLogoHover = () => {
+    if (!logoRef.current || isMotionReduced()) return;
+    const chars = logoRef.current.querySelectorAll(".logo-char");
+    gsap.to(chars, {
+      y: -4,
+      duration: 0.12,
+      stagger: 0.03,
+      yoyo: true,
+      repeat: 1,
+      ease: "sine.inOut",
+    });
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -100,15 +117,26 @@ export function Navbar() {
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 group">
+            <Link
+              href="/"
+              className="flex items-center gap-2 group"
+              onMouseEnter={handleLogoHover}
+            >
               <div className="w-10 h-10 rounded-full bg-espresso flex items-center justify-center group-hover:bg-espresso-500 transition-colors">
                 <Coffee className="w-5 h-5 text-caramel" />
               </div>
-              <span className={cn(
-                "font-serif text-xl font-bold transition-colors",
-                isDarkHeader ? "text-white drop-shadow-lg" : "text-foreground"
-              )}>
-                AddaDotCom
+              <span
+                ref={logoRef}
+                className={cn(
+                  "font-serif text-xl font-bold transition-colors inline-flex",
+                  isDarkHeader ? "text-white drop-shadow-lg" : "text-foreground"
+                )}
+              >
+                {"AddaDotCom".split("").map((char, i) => (
+                  <span key={i} className="logo-char inline-block">
+                    {char}
+                  </span>
+                ))}
               </span>
             </Link>
 

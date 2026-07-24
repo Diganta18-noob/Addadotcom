@@ -19,6 +19,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { gsap } from "gsap";
+import { isMotionReduced } from "@/lib/motion-safe";
 
 type OrderStatus = "PLACED" | "ACCEPTED" | "PREPARING" | "READY" | "SERVED" | "COMPLETED" | "CANCELLED";
 
@@ -54,6 +56,31 @@ const statusNext: Record<OrderStatus, OrderStatus | null> = {
 function getElapsedMins(createdAt: string): number {
   return Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000);
 }
+
+const animateNewTicket = (ticketId: string) => {
+  if (isMotionReduced()) return;
+  const el = document.querySelector(`[data-ticket="${ticketId}"]`);
+  if (!el) return;
+
+  gsap.fromTo(
+    el,
+    { scale: 0.5, opacity: 0, rotateZ: -3 },
+    {
+      scale: 1,
+      opacity: 1,
+      rotateZ: 0,
+      duration: 0.5,
+      ease: "elastic.out(1, 0.5)",
+    }
+  );
+
+  // Flash the border green on arrival
+  gsap.fromTo(
+    el,
+    { borderColor: "#22c55e" },
+    { borderColor: "inherit", duration: 2, ease: "power2.out", delay: 0.5 }
+  );
+};
 
 export default function KitchenKDSPage() {
   const [orders, setOrders] = useState<KDSOrder[]>([]);
@@ -103,6 +130,9 @@ export default function KitchenKDSPage() {
       fetchKitchenOrders();
       playChime();
       toast.success(`🔔 NEW KITCHEN TICKET: ${data.orderNumber}`, { duration: 6000 });
+      setTimeout(() => {
+        if (data.id) animateNewTicket(data.id);
+      }, 150);
     },
     "order-updated": () => {
       fetchKitchenOrders();
@@ -261,6 +291,7 @@ export default function KitchenKDSPage() {
                     return (
                       <motion.div
                         key={order.id}
+                        data-ticket={order.id}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}

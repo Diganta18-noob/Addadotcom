@@ -10,16 +10,16 @@ import {
   Clock,
   MapPin,
   Phone,
-  Mail,
   Star,
   Coffee,
   UtensilsCrossed,
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   Sparkles,
 } from "lucide-react";
-import { cn, formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
+import { HeroTitle } from "@/components/animations/HeroTitle";
+import { MagneticButton } from "@/components/animations/MagneticButton";
+import { useScrollReveal } from "@/components/animations/useScrollReveal";
 
 // ─── Hero Section ───────────────────────────────────────────
 
@@ -61,16 +61,11 @@ function HeroSection() {
             </span>
           </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
+          <HeroTitle
+            text="AddaDotCom"
             className="font-serif text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight"
-          >
-            Adda
-            <span className="text-caramel">Dot</span>
-            Com
-          </motion.h1>
+            delay={0.4}
+          />
 
           <motion.p
             initial={{ opacity: 0, y: 30 }}
@@ -88,27 +83,35 @@ function HeroSection() {
             transition={{ duration: 0.8, delay: 0.8 }}
             className="flex flex-wrap items-center gap-3 sm:gap-4"
           >
-            <Link
-              href="/menu"
-              className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-caramel text-espresso rounded-full text-sm font-semibold hover:bg-caramel-300 transition-all shadow-lg shadow-caramel/30 hover:shadow-xl hover:shadow-caramel/40 hover:-translate-y-0.5"
-            >
-              <UtensilsCrossed className="w-4 h-4" />
-              View Menu
-            </Link>
-            <Link
-              href="/reserve"
-              className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-white/10 text-white backdrop-blur-sm border border-white/20 rounded-full text-sm font-semibold hover:bg-white/20 transition-all hover:-translate-y-0.5"
-            >
-              <CalendarDays className="w-4 h-4" />
-              Reserve a Table
-            </Link>
-            <Link
-              href="/order"
-              className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-white/10 text-white backdrop-blur-sm border border-white/20 rounded-full text-sm font-semibold hover:bg-white/20 transition-all hover:-translate-y-0.5"
-            >
-              <Coffee className="w-4 h-4" />
-              Order Online
-            </Link>
+            <MagneticButton>
+              <Link
+                href="/menu"
+                className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-caramel text-espresso rounded-full text-sm font-semibold hover:bg-caramel-300 transition-all shadow-lg shadow-caramel/30 hover:shadow-xl hover:shadow-caramel/40"
+              >
+                <UtensilsCrossed className="w-4 h-4" />
+                View Menu
+              </Link>
+            </MagneticButton>
+
+            <MagneticButton>
+              <Link
+                href="/reserve"
+                className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-white/10 text-white backdrop-blur-sm border border-white/20 rounded-full text-sm font-semibold hover:bg-white/20 transition-all"
+              >
+                <CalendarDays className="w-4 h-4" />
+                Reserve a Table
+              </Link>
+            </MagneticButton>
+
+            <MagneticButton>
+              <Link
+                href="/order"
+                className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-white/10 text-white backdrop-blur-sm border border-white/20 rounded-full text-sm font-semibold hover:bg-white/20 transition-all"
+              >
+                <Coffee className="w-4 h-4" />
+                Order Online
+              </Link>
+            </MagneticButton>
           </motion.div>
         </div>
       </motion.div>
@@ -135,6 +138,8 @@ function HeroSection() {
 // ─── About Section ──────────────────────────────────────────
 
 function AboutSection() {
+  const statsRef = useScrollReveal<HTMLDivElement>(0.12);
+
   return (
     <section id="about" className="py-20 lg:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -198,13 +203,17 @@ function AboutSection() {
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 pt-4">
+            <div ref={statsRef} className="grid grid-cols-3 gap-4 pt-4">
               {[
                 { value: "2019", label: "Est." },
                 { value: "15K+", label: "Happy Guests" },
                 { value: "4.8", label: "Rating ★" },
               ].map((stat) => (
-                <div key={stat.label} className="text-center p-4 rounded-2xl bg-muted/50">
+                <div
+                  key={stat.label}
+                  data-reveal
+                  className="text-center p-4 rounded-2xl bg-muted/50"
+                >
                   <div className="font-serif text-2xl font-bold text-caramel">
                     {stat.value}
                   </div>
@@ -255,24 +264,12 @@ const featuredDishes = [
 ];
 
 function FeaturedSection() {
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % featuredDishes.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
+  const dishesGridRef = useScrollReveal<HTMLDivElement>(0.12);
 
   return (
-    <section className="py-20 lg:py-28 bg-muted/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-12"
-        >
+    <section className="py-20 lg:py-28 bg-muted/30 noise-bg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="text-center mb-12">
           <span className="text-caramel text-sm font-semibold tracking-wider uppercase">
             Must Try
           </span>
@@ -282,18 +279,11 @@ function FeaturedSection() {
           <p className="text-muted-foreground mt-3 max-w-md mx-auto">
             Handpicked favourites loved by our regulars
           </p>
-        </motion.div>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredDishes.map((dish, index) => (
-            <motion.div
-              key={dish.name}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.15 }}
-              className="group"
-            >
+        <div ref={dishesGridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {featuredDishes.map((dish) => (
+            <div key={dish.name} data-reveal className="group">
               <div className="rounded-2xl overflow-hidden border border-border bg-card hover:shadow-xl hover:shadow-espresso/5 transition-all duration-300 hover:-translate-y-1">
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <Image
@@ -325,7 +315,7 @@ function FeaturedSection() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 
@@ -370,31 +360,25 @@ const testimonials = [
 ];
 
 function TestimonialsSection() {
+  const testimonialsGridRef = useScrollReveal<HTMLDivElement>(0.15);
+
   return (
     <section className="py-20 lg:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-12"
-        >
+        <div className="text-center mb-12">
           <span className="text-caramel text-sm font-semibold tracking-wider uppercase">
             What People Say
           </span>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold mt-2">
             Guest Reviews
           </h2>
-        </motion.div>
+        </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {testimonials.map((testimonial, index) => (
-            <motion.div
+        <div ref={testimonialsGridRef} className="grid md:grid-cols-3 gap-6">
+          {testimonials.map((testimonial) => (
+            <div
               key={testimonial.name}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.15 }}
+              data-reveal
               className="p-6 rounded-2xl border border-border bg-card hover:shadow-lg transition-all"
             >
               <div className="flex items-center gap-1 mb-4">
@@ -416,7 +400,7 @@ function TestimonialsSection() {
                   </p>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
@@ -427,16 +411,13 @@ function TestimonialsSection() {
 // ─── Location Section ───────────────────────────────────────
 
 function LocationSection() {
+  const contactInfoRef = useScrollReveal<HTMLDivElement>(0.15);
+
   return (
     <section className="py-20 lg:py-28 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="space-y-8"
-          >
+          <div className="space-y-8">
             <div>
               <span className="text-caramel text-sm font-semibold tracking-wider uppercase">
                 Visit Us
@@ -446,8 +427,8 @@ function LocationSection() {
               </h2>
             </div>
 
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
+            <div ref={contactInfoRef} className="space-y-6">
+              <div data-reveal className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-caramel/10 flex items-center justify-center flex-shrink-0">
                   <MapPin className="w-5 h-5 text-caramel" />
                 </div>
@@ -461,7 +442,7 @@ function LocationSection() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-4">
+              <div data-reveal className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-caramel/10 flex items-center justify-center flex-shrink-0">
                   <Clock className="w-5 h-5 text-caramel" />
                 </div>
@@ -475,7 +456,7 @@ function LocationSection() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-4">
+              <div data-reveal className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-caramel/10 flex items-center justify-center flex-shrink-0">
                   <Phone className="w-5 h-5 text-caramel" />
                 </div>
@@ -487,14 +468,16 @@ function LocationSection() {
               </div>
             </div>
 
-            <Link
-              href="/reserve"
-              className="inline-flex items-center gap-2 px-8 py-3 bg-espresso text-cream rounded-full text-sm font-semibold hover:bg-espresso-500 transition-colors"
-            >
-              <CalendarDays className="w-4 h-4" />
-              Reserve a Table
-            </Link>
-          </motion.div>
+            <MagneticButton>
+              <Link
+                href="/reserve"
+                className="inline-flex items-center gap-2 px-8 py-3 bg-espresso text-cream rounded-full text-sm font-semibold hover:bg-espresso-500 transition-colors"
+              >
+                <CalendarDays className="w-4 h-4" />
+                Reserve a Table
+              </Link>
+            </MagneticButton>
+          </div>
 
           <motion.div
             initial={{ opacity: 0, x: 30 }}
