@@ -113,6 +113,18 @@ export function Navbar() {
     return pathname === href;
   };
 
+  // Animate cart badge on count increase
+  const prevCount = React.useRef(itemCount);
+  useEffect(() => {
+    if (itemCount > prevCount.current) {
+      const badge = document.querySelector("[data-cart-badge]");
+      if (badge && !isMotionReduced()) {
+        gsap.fromTo(badge, { scale: 1.6 }, { scale: 1, duration: 0.3, ease: "back.out(2)" });
+      }
+    }
+    prevCount.current = itemCount;
+  }, [itemCount]);
+
   // White text/transparent background only on home page when not scrolled
   const isDarkHeader = pathname === "/" && !scrolled;
 
@@ -208,6 +220,7 @@ export function Navbar() {
                 <ShoppingCart className="w-5 h-5" />
                 {itemCount > 0 && (
                   <motion.span
+                    data-cart-badge
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-caramel text-espresso text-[10px] font-bold rounded-full flex items-center justify-center"
@@ -343,8 +356,9 @@ export function MobileBottomBar() {
     setMounted(true);
   }, []);
 
-  // Hide on admin pages
-  if (pathname?.startsWith("/admin")) return null;
+  // Hide on admin, track, and invoice pages
+  const hiddenOnPaths = ["/admin", "/track", "/invoice"];
+  if (hiddenOnPaths.some((p) => pathname?.startsWith(p))) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 xl:hidden bg-background/95 backdrop-blur-md border-t border-border safe-bottom">

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartItem, CartItemAddon } from "@/types";
+export type { CartItem, CartItemAddon };
 
 export interface ActiveOrder {
   id: string;
@@ -67,7 +68,7 @@ export const useCartStore = create<CartStore>()(
       activeOrder: null,
 
       addItem: (item) => {
-        const addonsKey = (item.addons || []).map((a) => a.name).join(",");
+        const addonsKey = (item.addons || []).map((a: CartItemAddon) => a.name).join(",");
         const id = `${item.menuItemId}-${item.variant || "default"}-${addonsKey}`;
         set((state) => {
           const existingIndex = state.items.findIndex(

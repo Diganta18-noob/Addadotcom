@@ -33,7 +33,7 @@ function AccountContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
 
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const { addItem } = useCartStore();
 
   const [activeTab, setActiveTab] = useState<"orders" | "reservations" | "loyalty" | "profile" | "favorites">("orders");
@@ -82,7 +82,7 @@ function AccountContent() {
   useEffect(() => {
     if (!session || !user?.email) return;
     setLoadingReservations(true);
-    fetch(`/api/reservations?code=${encodeURIComponent(user.email)}`)
+    fetch(`/api/reservations?guestEmail=${encodeURIComponent(user.email)}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
@@ -122,6 +122,29 @@ function AccountContent() {
       toast.error("Sign in failed. Please try again.");
     } finally {
       setLoadingLogin(false);
+    }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    try {
+      const res = await fetch("/api/account/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName, phone: editPhone }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Profile details updated successfully!");
+        if (update) await update({ name: editName });
+      } else {
+        toast.error(data.message || "Failed to update profile");
+      }
+    } catch (err) {
+      toast.error("Network error while saving profile");
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -501,13 +524,7 @@ function AccountContent() {
       {activeTab === "profile" && (
         <div className="bg-card border border-border p-6 rounded-2xl max-w-xl space-y-6">
           <h3 className="font-serif text-xl font-bold">Edit Profile Details</h3>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              toast.success("Profile details updated successfully!");
-            }}
-            className="space-y-4"
-          >
+          <form onSubmit={handleSaveProfile} className="space-y-4">
             <div>
               <label className="text-xs font-semibold mb-1 block">Full Name</label>
               <input

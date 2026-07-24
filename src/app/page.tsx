@@ -28,12 +28,6 @@ function HeroSection() {
   const y = useTransform(scrollY, [0, 500], [0, 150]);
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.history.scrollRestoration = "manual";
-      window.scrollTo(0, 0);
-    }
-  }, []);
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-espresso">

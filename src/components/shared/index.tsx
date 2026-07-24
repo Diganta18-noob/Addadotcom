@@ -212,3 +212,5 @@ export function SearchInput({ value, onChange, placeholder = "Search...", classN
     </div>
   );
 }
+
+export { LoadingButton } from "./LoadingButton";

@@ -195,6 +195,15 @@ function ItemDetailModal({
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState("");
 
+  // Handle Escape key listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   // Initialize variants with first option
   useEffect(() => {
     const initial: Record<string, string> = {};
@@ -470,12 +479,13 @@ function normalizeMenuItem(item: any): MenuItemType {
 
 export default function MenuPage() {
   const [categories, setCategories] = useState<CategoryType[]>(demoCategories);
-  const [items, setItems] = useState<MenuItemType[]>(demoItems);
+  const [items, setItems] = useState<MenuItemType[]>(demoItems.map(normalizeMenuItem));
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [selectedItem, setSelectedItem] = useState<MenuItemType | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [apiLoaded, setApiLoaded] = useState(false);
 
   const allTags = ["VEG", "NON_VEG", "VEGAN", "GLUTEN_FREE", "SPICY"];
 
@@ -524,26 +534,21 @@ export default function MenuPage() {
               setCategories(extractedCategories);
             }
           }
-        } else {
-          setItems(demoItems.map(normalizeMenuItem));
-          setCategories(demoCategories);
         }
-      } else {
-        setItems(demoItems.map(normalizeMenuItem));
-        setCategories(demoCategories);
       }
     } catch (error) {
       console.error("Failed to load menu API, using demo data fallback.", error);
-      setItems(demoItems.map(normalizeMenuItem));
-      setCategories(demoCategories);
     } finally {
+      setApiLoaded(true);
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchMenu();
-  }, [fetchMenu]);
+    if (!apiLoaded) {
+      fetchMenu();
+    }
+  }, [apiLoaded, fetchMenu]);
 
   // Filter items
   const filteredItems = useMemo(() => {

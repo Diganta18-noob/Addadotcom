@@ -1,16 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
-import { useCartStore, useUIStore } from "@/store";
+import toast from "react-hot-toast";
+import { useCartStore, useUIStore, CartItem } from "@/store";
 import { formatCurrency, cn } from "@/lib/utils";
-import Link from "next/link";
 
 export function CartDrawer() {
   const { isCartOpen, closeCart } = useUIStore();
   const {
     items,
+    addItem,
     removeItem,
     updateQuantity,
     clearCart,
@@ -18,8 +21,38 @@ export function CartDrawer() {
     getItemCount,
   } = useCartStore();
 
+  const [clearConfirm, setClearConfirm] = useState(false);
+
+  useEffect(() => {
+    if (clearConfirm) {
+      const timer = setTimeout(() => setClearConfirm(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [clearConfirm]);
+
   const subtotal = getSubtotal();
   const itemCount = getItemCount();
+
+  const handleRemove = (item: CartItem) => {
+    removeItem(item.id);
+    toast(
+      (t) => (
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium">{item.menuItemName} removed</span>
+          <button
+            onClick={() => {
+              addItem(item);
+              toast.dismiss(t.id);
+            }}
+            className="text-caramel font-bold text-sm underline hover:opacity-80 transition-opacity"
+          >
+            Undo
+          </button>
+        </div>
+      ),
+      { duration: 4000 }
+    );
+  };
 
   return (
     <AnimatePresence>
@@ -96,12 +129,14 @@ export function CartDrawer() {
                       className="flex gap-4 p-3 rounded-xl border border-border bg-card"
                     >
                       {/* Image placeholder */}
-                      <div className="w-16 h-16 rounded-lg bg-muted flex-shrink-0 overflow-hidden">
+                      <div className="w-16 h-16 rounded-lg bg-muted flex-shrink-0 overflow-hidden relative">
                         {item.menuItemImage ? (
-                          <img
+                          <Image
                             src={item.menuItemImage}
                             alt={item.menuItemName}
-                            className="w-full h-full object-cover"
+                            fill
+                            sizes="64px"
+                            className="object-cover"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-2xl">
@@ -121,7 +156,7 @@ export function CartDrawer() {
                         )}
                         {item.addons && item.addons.length > 0 && (
                           <p className="text-xs text-muted-foreground">
-                            +{item.addons.map((a) => a.name).join(", ")}
+                            +{item.addons.map((a: any) => a.name).join(", ")}
                           </p>
                         )}
                         {item.note && (
@@ -158,7 +193,7 @@ export function CartDrawer() {
                               <Plus className="w-3 h-3" />
                             </button>
                             <button
-                              onClick={() => removeItem(item.id)}
+                              onClick={() => handleRemove(item)}
                               className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-500 transition-colors ml-1"
                               aria-label="Remove item"
                             >
@@ -188,10 +223,22 @@ export function CartDrawer() {
 
                 <div className="flex gap-3">
                   <button
-                    onClick={clearCart}
-                    className="flex-1 px-4 py-2.5 border border-border rounded-xl text-sm font-medium hover:bg-muted transition-colors"
+                    onClick={() => {
+                      if (clearConfirm) {
+                        clearCart();
+                        setClearConfirm(false);
+                      } else {
+                        setClearConfirm(true);
+                      }
+                    }}
+                    className={cn(
+                      "flex-1 px-4 py-2.5 border rounded-xl text-sm font-medium transition-colors",
+                      clearConfirm
+                        ? "border-red-500 text-red-500 bg-red-50 dark:bg-red-950/20"
+                        : "border-border hover:bg-muted"
+                    )}
                   >
-                    Clear
+                    {clearConfirm ? "Sure? Clear" : "Clear"}
                   </button>
                   <Link
                     href="/order"

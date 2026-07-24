@@ -21,9 +21,11 @@ import {
   Tag,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import { useCartStore } from "@/store";
 import { cn, formatCurrency, generateOrderNumber } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { LoadingButton } from "@/components/shared";
 
 const orderTypeConfig = [
   { value: "DINE_IN" as const, label: "Dine-in", icon: UtensilsCrossed, description: "Eat at the café" },
@@ -470,9 +472,9 @@ export default function OrderPage() {
               <div className="space-y-3">
                 {items.map((item) => (
                   <div key={item.id} className="flex gap-4 p-4 rounded-xl border border-border bg-card">
-                    <div className="w-16 h-16 rounded-lg bg-muted flex-shrink-0 overflow-hidden">
+                    <div className="w-16 h-16 rounded-lg bg-muted flex-shrink-0 overflow-hidden relative">
                       {item.menuItemImage ? (
-                        <img src={item.menuItemImage} alt={item.menuItemName} className="w-full h-full object-cover" />
+                        <Image src={item.menuItemImage} alt={item.menuItemName} fill sizes="64px" className="object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-2xl">☕</div>
                       )}
@@ -481,7 +483,7 @@ export default function OrderPage() {
                       <h4 className="text-sm font-semibold">{item.menuItemName}</h4>
                       {item.variant && <p className="text-xs text-muted-foreground">{item.variant}</p>}
                       {item.addons && item.addons.length > 0 && (
-                        <p className="text-xs text-muted-foreground">+{item.addons.map(a => a.name).join(", ")}</p>
+                        <p className="text-xs text-muted-foreground">+{item.addons.map((a: any) => a.name).join(", ")}</p>
                       )}
                       {item.note && <p className="text-xs text-caramel italic">&quot;{item.note}&quot;</p>}
                       <div className="flex items-center justify-between mt-2">
@@ -657,14 +659,15 @@ export default function OrderPage() {
                 </div>
               </div>
 
-              <button
+              <LoadingButton
                 onClick={handlePlaceOrder}
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-espresso text-cream rounded-xl font-semibold hover:bg-espresso-500 transition-all active:scale-[0.98] disabled:opacity-50"
+                loading={loading}
+                loadingText="Placing Order..."
+                className="w-full px-6 py-3.5 bg-espresso text-cream rounded-xl font-semibold hover:bg-espresso-500 transition-all active:scale-[0.98]"
               >
-                {loading ? "Placing Order..." : "Place Order"}
+                Place Order
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </LoadingButton>
 
               <p className="text-xs text-center text-muted-foreground">
                 By placing this order, you agree to our terms and conditions

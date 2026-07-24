@@ -43,6 +43,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const stored = JSON.parse(localStorage.getItem('addadotcom-ui') || '{}');
+                if (stored.state?.isDarkMode) document.documentElement.classList.add('dark');
+              } catch(e) {}
+            `,
+          }}
+        />
+      </head>
       <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
         <ClientProviders>{children}</ClientProviders>
       </body>
