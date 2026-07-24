@@ -26,6 +26,7 @@ import { useCartStore } from "@/store";
 import { cn, formatCurrency, generateOrderNumber } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { LoadingButton } from "@/components/shared";
+import { useSSE } from "@/lib/useSSE";
 
 const orderTypeConfig = [
   { value: "DINE_IN" as const, label: "Dine-in", icon: UtensilsCrossed, description: "Eat at the café" },
@@ -87,20 +88,35 @@ export default function OrderPage() {
     }
   }, [qrTableParam, isQRMode, setOrderType, setTableNumber]);
 
+  const fetchTables = React.useCallback(async () => {
+    try {
+      const res = await fetch("/api/tables");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setRealtimeTables(data.data);
+      }
+    } catch {}
+  }, []);
+
+  useSSE({
+    "table-updated": (data) => {
+      if (data?.tableId && data?.status) {
+        setRealtimeTables((prev) =>
+          prev.map((t) => (t.id === data.tableId || t.number === data.tableNumber ? { ...t, status: data.status } : t))
+        );
+      }
+      fetchTables();
+    },
+    "new-order": () => fetchTables(),
+    "bill-paid": () => fetchTables(),
+  });
+
   React.useEffect(() => {
     if (orderType === "DINE_IN") {
       setLoadingTables(true);
-      fetch("/api/tables")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && Array.isArray(data.data)) {
-            setRealtimeTables(data.data);
-          }
-        })
-        .catch(() => {})
-        .finally(() => setLoadingTables(false));
+      fetchTables().finally(() => setLoadingTables(false));
     }
-  }, [orderType]);
+  }, [orderType, fetchTables]);
 
   const subtotal = getSubtotal();
   const taxes = getTaxes();

@@ -70,6 +70,7 @@ export default function AdminTables() {
   useSSE({
     "table-updated": () => fetchTables(),
     "bill-paid": () => fetchTables(),
+    "new-order": () => fetchTables(),
   });
 
   useEffect(() => {

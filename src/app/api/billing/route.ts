@@ -86,6 +86,12 @@ export const POST = apiHandler(async (request) => {
       total: bill.total,
       tableId: bill.order?.tableId || null,
     });
+    if (isPaid && bill.order?.tableId) {
+      broadcast("table-updated", {
+        tableId: bill.order.tableId,
+        status: "FREE",
+      });
+    }
   } catch (e) {
     console.error("SSE Broadcast Error:", e);
   }

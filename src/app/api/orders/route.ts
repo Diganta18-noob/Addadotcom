@@ -106,6 +106,13 @@ export const POST = apiHandler(async (request) => {
       tableNumber: order.table?.number || null,
       itemCount: Array.isArray(data.items) ? data.items.length : 0,
     });
+    if (resolvedTableId) {
+      broadcast("table-updated", {
+        tableId: resolvedTableId,
+        tableNumber: order.table?.number || null,
+        status: "OCCUPIED",
+      });
+    }
   } catch (e) {
     console.error("SSE Broadcast Error:", e);
   }
