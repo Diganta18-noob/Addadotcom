@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/logo.png" alt="AddaDotCom Logo" width="100" height="100" />
+<img src="public/logo.png" alt="AddaDotCom Logo" width="120" height="120" />
 
 # AddaDotCom
 
@@ -8,11 +8,13 @@
 
 *A full-stack, production-ready POS and customer ordering platform — built with Next.js 14, PostgreSQL, and real-time SSE.*
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-addadotcom.vercel.app-4B2E2B?style=for-the-badge&logo=vercel)](https://addadotcom.vercel.app)
-[![License](https://img.shields.io/badge/License-MIT-D4A056?style=for-the-badge)](LICENSE)
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=nextdotjs)](https://nextjs.org)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma-336791?style=for-the-badge&logo=postgresql)](https://prisma.io)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript)](https://typescriptlang.org)
+<p align="center">
+  <a href="https://addadotcom.vercel.app"><img src="https://img.shields.io/badge/Live%20Demo-addadotcom.vercel.app-4B2E2B?style=for-the-badge&logo=vercel" alt="Live Demo" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-D4A056?style=for-the-badge" alt="License" /></a>
+  <a href="https://nextjs.org"><img src="https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=nextdotjs" alt="Next.js" /></a>
+  <a href="https://prisma.io"><img src="https://img.shields.io/badge/PostgreSQL-Prisma-336791?style=for-the-badge&logo=postgresql" alt="PostgreSQL" /></a>
+  <a href="https://typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript" /></a>
+</p>
 
 </div>
 
