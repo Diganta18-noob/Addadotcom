@@ -405,3 +405,53 @@ model Review {
 
   @@map("reviews")
 }
+
+// ─── Automation Engine ──────────────────────────────────────
+
+model AutomationWorkflow {
+  id           String   @id @default(cuid())
+  name         String   // e.g. "Low Inventory Alert"
+  description  String?
+  isActive     Boolean  @default(true)
+  triggerEvent String   // "INVENTORY_LOW", "ORDER_CREATED", etc.
+
+  // JSON array of conditions: [{ field: "total", operator: "gt", value: 1000 }]
+  conditions   Json     @default("[]")
+
+  // JSON array of actions: [{ type: "BROADCAST_SSE", params: {...} }]
+  actions      Json     @default("[]")
+
+  // Execution config
+  maxRetries   Int      @default(3)
+  retryDelay   Int      @default(2000) // ms
+  dedupeKey    String?  // prevent duplicate triggers within window
+  dedupeWindow Int      @default(60)   // seconds
+
+  executions   AutomationLog[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("automation_workflows")
+}
+
+model AutomationLog {
+  id           String             @id @default(cuid())
+  workflowId   String
+  workflow     AutomationWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  status       String             // "SUCCESS" | "FAILED" | "RETRYING" | "SKIPPED"
+  triggerEvent String
+  triggeredBy  String?            // orderId, userId, inventoryItemId, etc.
+  payload      Json               // full event payload context
+  result       Json?              // action output summary
+  error        String?
+  retryCount   Int                @default(0)
+  durationMs   Int?
+
+  createdAt    DateTime           @default(now())
+
+  @@index([workflowId, createdAt])
+  @@index([status, createdAt])
+  @@map("automation_logs")
+}

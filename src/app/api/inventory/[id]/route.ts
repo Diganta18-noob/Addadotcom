@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { apiHandler, ApiError } from "@/lib/api-helpers";
 import { adjustInventorySchema } from "@/lib/validations";
+import { AutomationEngine } from "@/lib/automation";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,20 @@ export const PUT = apiHandler(async (request, context: any) => {
       reason: data.reason || "Manual adjustment",
     },
   });
+
+  // Fire Automation Engine event if stock is low
+  if (updated.quantity <= updated.lowStockThreshold) {
+    AutomationEngine.fire(
+      "INVENTORY_LOW",
+      {
+        inventoryItemId: updated.id,
+        name: updated.name,
+        quantity: updated.quantity,
+        threshold: updated.lowStockThreshold,
+      },
+      updated.id
+    );
+  }
 
   return { data: updated };
 });

@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { generateBillNumber } from "@/lib/utils";
 import { apiHandler } from "@/lib/api-helpers";
 import { createBillSchema } from "@/lib/validations";
+import { AutomationEngine } from "@/lib/automation";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -95,6 +96,19 @@ export const POST = apiHandler(async (request) => {
   } catch (e) {
     console.error("SSE Broadcast Error:", e);
   }
+
+  // Fire Automation Engine event asynchronously
+  AutomationEngine.fire(
+    isPaid ? "PAYMENT_SUCCESS" : "PAYMENT_FAILED",
+    {
+      orderId: bill.orderId,
+      billNumber: bill.billNumber,
+      total: bill.total,
+      tableId: bill.order?.tableId,
+      userId: bill.order?.userId,
+    },
+    bill.id
+  );
 
   return { data: bill, status: 201 };
 });

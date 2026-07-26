@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { apiHandler, ApiError } from "@/lib/api-helpers";
 import { updateOrderSchema } from "@/lib/validations";
+import { AutomationEngine } from "@/lib/automation";
 
 export const dynamic = "force-dynamic";
 
@@ -95,6 +96,22 @@ export const PUT = apiHandler(async (request, context: any) => {
     });
   } catch (e) {
     console.error("SSE Broadcast Error:", e);
+  }
+
+  // Fire Automation Engine event asynchronously
+  if (data.status) {
+    AutomationEngine.fire(
+      "ORDER_STATUS_CHANGED",
+      {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        previousStatus: existing.status,
+        tableId: order.tableId,
+        userId: order.userId,
+      },
+      order.id
+    );
   }
 
   return { data: order };

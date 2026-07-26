@@ -21,6 +21,7 @@ import {
   Users,
   ChefHat,
   Star,
+  Zap,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -41,6 +42,7 @@ const sidebarLinks = [
   { href: "/admin/reviews", label: "Customer Reviews", icon: Star },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/admin/automation", label: "Automation Engine", icon: Zap },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

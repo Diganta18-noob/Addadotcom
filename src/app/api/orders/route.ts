@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { generateOrderNumber } from "@/lib/utils";
 import { apiHandler, ApiError } from "@/lib/api-helpers";
 import { createOrderSchema, updateOrderSchema } from "@/lib/validations";
+import { AutomationEngine } from "@/lib/automation";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -117,6 +118,25 @@ export const POST = apiHandler(async (request) => {
   } catch (e) {
     console.error("SSE Broadcast Error:", e);
   }
+
+  // Fire Automation Engine event asynchronously
+  const total = Array.isArray(data.items)
+    ? data.items.reduce((s: number, i: any) => s + (i.totalPrice || 0), 0)
+    : 0;
+
+  AutomationEngine.fire(
+    "ORDER_CREATED",
+    {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      orderType: order.type,
+      tableId: resolvedTableId,
+      userId: order.userId,
+      items: data.items,
+      total,
+    },
+    order.id
+  );
 
   return { data: order, status: 201 };
 });

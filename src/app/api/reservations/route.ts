@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { generateBookingCode } from "@/lib/utils";
 import { apiHandler, ApiError } from "@/lib/api-helpers";
 import { createReservationSchema } from "@/lib/validations";
+import { AutomationEngine } from "@/lib/automation";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -123,6 +124,20 @@ export const POST = apiHandler(async (request) => {
       console.error("SSE Broadcast Error:", e);
     }
   }
+
+  // Fire Automation Engine event asynchronously
+  AutomationEngine.fire(
+    "RESERVATION_CREATED",
+    {
+      reservationId: reservation.id,
+      guestName: reservation.guestName,
+      guestPhone: reservation.guestPhone,
+      tableId: reservation.tableId,
+      date: reservation.date,
+      timeSlot: reservation.timeSlot,
+    },
+    reservation.id
+  );
 
   return { data: reservation, status: 201 };
 });

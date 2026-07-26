@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { apiHandler, ApiError } from "@/lib/api-helpers";
+import { AutomationEngine } from "@/lib/automation";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -36,6 +37,18 @@ export const POST = apiHandler(async (request) => {
       approved: false, // Moderation queue default
     },
   });
+
+  // Fire Automation Engine event asynchronously
+  AutomationEngine.fire(
+    "REVIEW_SUBMITTED",
+    {
+      reviewId: review.id,
+      author: review.author,
+      rating: review.rating,
+      comment: review.comment,
+    },
+    review.id
+  );
 
   return { data: review, status: 201 };
 });
