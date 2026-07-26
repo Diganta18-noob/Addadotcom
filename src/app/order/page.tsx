@@ -501,9 +501,6 @@ export default function OrderPage() {
       </div>
     );
   }
-      </div>
-    );
-  }
 
   if (items.length === 0) {
     return (

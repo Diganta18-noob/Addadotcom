@@ -11,6 +11,7 @@ export interface ActiveOrder {
   tableNumber?: string | null;
   total?: number;
   createdAt?: string;
+  items?: any[];
 }
 
 interface CartStore {
