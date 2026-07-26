@@ -25,14 +25,12 @@ import { useScrollReveal } from "@/components/animations/useScrollReveal";
 
 function HeroSection() {
   const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 500], [0, 150]);
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
-
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-espresso">
       {/* Background Image */}
-      <motion.div style={{ y }} className="absolute -top-32 -bottom-32 inset-x-0 z-0">
+      <div className="absolute -top-32 -bottom-32 inset-x-0 z-0 will-change-transform" style={{ transform: "translateZ(0)" }}>
         <Image
           src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1920&q=80"
           alt="Café background"
@@ -43,7 +41,7 @@ function HeroSection() {
         />
         <div className="absolute inset-0 hero-gradient" />
         <div className="absolute inset-0 bg-espresso/30" />
-      </motion.div>
+      </div>
 
       {/* Content */}
       <motion.div
@@ -363,28 +361,40 @@ const testimonials = [
 function TestimonialsSection() {
   const testimonialsGridRef = useScrollReveal<HTMLDivElement>(0.15);
   const [reviewsList, setReviewsList] = useState(testimonials);
+  const sectionRef = React.useRef<HTMLElement>(null);
+  const [fetched, setFetched] = useState(false);
 
   useEffect(() => {
-    fetch("/api/reviews?limit=6")
-      .then((r) => r.json())
-      .then(({ data }) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setReviewsList(
-            data.map((r: any) => ({
-              name: r.author || "Valued Customer",
-              role: "Verified Guest",
-              avatar: (r.author || "VG").slice(0, 2).toUpperCase(),
-              rating: r.rating || 5,
-              text: r.comment || r.text || "Loved the experience at AddaDotCom!",
-            }))
-          );
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !fetched) {
+          setFetched(true);
+          fetch("/api/reviews?limit=6")
+            .then((r) => r.json())
+            .then(({ data }) => {
+              if (Array.isArray(data) && data.length > 0) {
+                setReviewsList(
+                  data.map((r: any) => ({
+                    name: r.author || "Valued Customer",
+                    role: "Verified Guest",
+                    avatar: (r.author || "VG").slice(0, 2).toUpperCase(),
+                    rating: r.rating || 5,
+                    text: r.comment || r.text || "Loved the experience at AddaDotCom!",
+                  }))
+                );
+              }
+            })
+            .catch(() => {});
         }
-      })
-      .catch(() => {});
-  }, []);
+      },
+      { rootMargin: "300px" }
+    );
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, [fetched]);
 
   return (
-    <section className="py-20 lg:py-28">
+    <section ref={sectionRef} className="py-20 lg:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <span className="text-caramel text-sm font-semibold tracking-wider uppercase">
@@ -433,6 +443,19 @@ function TestimonialsSection() {
 
 function LocationSection() {
   const contactInfoRef = useScrollReveal<HTMLDivElement>(0.15);
+  const [mapVisible, setMapVisible] = useState(false);
+  const mapRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setMapVisible(true);
+      },
+      { rootMargin: "200px" }
+    );
+    if (mapRef.current) observer.observe(mapRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section className="py-20 lg:py-28 bg-muted/30">
@@ -501,21 +524,28 @@ function LocationSection() {
           </div>
 
           <motion.div
+            ref={mapRef}
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             className="rounded-2xl overflow-hidden border border-border shadow-lg h-[400px] lg:h-[500px]"
           >
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3684.062086438075!2d88.42831201533!3d22.572646290874!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a0275ade687271b%3A0xe5ec827d04fef40!2sSalt%20Lake%20Sector%20V%2C%20Kolkata%2C%20West%20Bengal!5e0!3m2!1sen!2sin!4v1234567890"
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="AddaDotCom Location"
-            />
+            {mapVisible ? (
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3684.062086438075!2d88.42831201533!3d22.572646290874!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a0275ade687271b%3A0xe5ec827d04fef40!2sSalt%20Lake%20Sector%20V%2C%20Kolkata%2C%20West%20Bengal!5e0!3m2!1sen!2sin!4v1234567890"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="AddaDotCom Location"
+              />
+            ) : (
+              <div className="w-full h-full bg-muted animate-pulse flex items-center justify-center">
+                <MapPin className="w-8 h-8 text-muted-foreground/30" />
+              </div>
+            )}
           </motion.div>
         </div>
       </div>

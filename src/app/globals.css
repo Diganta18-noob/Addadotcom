@@ -58,12 +58,9 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 
-  body,
-  .bg-background,
-  .bg-card,
-  .bg-muted,
-  .border-border {
-    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+  :root,
+  html {
+    transition: background-color 200ms ease, color 200ms ease;
   }
 
   img, video, canvas, svg {
@@ -151,6 +148,8 @@
   /* Noise / Grain texture background overlay */
   .noise-bg {
     position: relative;
+    isolation: isolate;
+    transform: translateZ(0);
   }
   .noise-bg::before {
     content: "";
@@ -160,6 +159,9 @@
     opacity: 0.035;
     pointer-events: none;
     z-index: 0;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 }
 

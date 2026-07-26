@@ -15,27 +15,33 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
     if (isMotionReduced()) return;
 
     const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      duration: 0.9,
+      easing: (t) => 1 - Math.pow(1 - t, 3),
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: true,
-      wheelMultiplier: 0.8,
-      touchMultiplier: 1.5,
+      wheelMultiplier: 1.0,
+      touchMultiplier: 1.8,
+      infinite: false,
     });
     lenisRef.current = lenis;
 
-    // Sync Lenis with GSAP ScrollTrigger
-    lenis.on("scroll", ScrollTrigger.update);
-    const updateRaf = (time: number) => {
-      lenis.raf(time * 1000);
+    let rafId: number;
+    const raf = (time: number) => {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
     };
-    gsap.ticker.add(updateRaf);
-    gsap.ticker.lagSmoothing(0);
+    rafId = requestAnimationFrame(raf);
+
+    const onScroll = () => {
+      ScrollTrigger.update();
+    };
+    lenis.on("scroll", onScroll);
 
     return () => {
+      cancelAnimationFrame(rafId);
+      lenis.off("scroll", onScroll);
       lenis.destroy();
-      gsap.ticker.remove(updateRaf);
       lenisRef.current = null;
     };
   }, []);
