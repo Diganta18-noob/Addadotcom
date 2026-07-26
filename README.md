@@ -1,30 +1,47 @@
 <div align="center">
 
-<img src="public/logo.png" alt="AddaDotCom Logo" width="120" height="120" />
+<img src="docs/screenshots/hero-dashboard.png" alt="AddaDotCom — Restaurant Management System" width="860" />
 
-# AddaDotCom
+<br/>
 
-### Enterprise-Grade Café & Restaurant Management System
+# ☕ AddaDotCom
 
-*A full-stack, production-ready POS and customer ordering platform — built with Next.js 14, PostgreSQL, and real-time SSE.*
+### The Open-Source Café & Restaurant Operating System
 
-<p align="center">
-  <a href="https://addadotcom.vercel.app"><img src="https://img.shields.io/badge/Live%20Demo-addadotcom.vercel.app-4B2E2B?style=for-the-badge&logo=vercel" alt="Live Demo" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-D4A056?style=for-the-badge" alt="License" /></a>
-  <a href="https://nextjs.org"><img src="https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=nextdotjs" alt="Next.js" /></a>
-  <a href="https://prisma.io"><img src="https://img.shields.io/badge/PostgreSQL-Prisma-336791?style=for-the-badge&logo=postgresql" alt="PostgreSQL" /></a>
-  <a href="https://typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript" /></a>
-</p>
+**Zero-touch table ordering · Real-time kitchen display · GST-compliant invoicing**
+*Built for modern Indian restaurants. Inspired by Toast POS, PetPooja, and Starbucks POS.*
+
+<br/>
+
+> ⭐ Star the repo if AddaDotCom helped you build or run your café.
+
+[![Stars](https://img.shields.io/github/stars/yourusername/addadotcom?style=social)](https://github.com/yourusername/addadotcom)
+
+<br/>
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-addadotcom.vercel.app-4B2E2B?style=for-the-badge&logo=vercel&logoColor=white)](https://addadotcom.vercel.app)
+[![License MIT](https://img.shields.io/badge/License-MIT-D4A056?style=for-the-badge)](LICENSE)
+[![Next.js 14](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=nextdotjs)](https://nextjs.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://prisma.io)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
+
+<br/>
+
+[![12 Pages](https://img.shields.io/badge/12-Customer_&_Admin_Pages-4B2E2B?style=for-the-badge)](#-features)
+[![15 API Routes](https://img.shields.io/badge/15-API_Route_Groups-D4A056?style=for-the-badge)](#-api-reference)
+[![8 SSE Events](https://img.shields.io/badge/8-Real--Time_SSE_Events-336791?style=for-the-badge)](#-real-time-sse-events)
+[![GST Compliant](https://img.shields.io/badge/GST-Compliant_Invoices-00B894?style=for-the-badge)](#-features)
+[![0 Polling](https://img.shields.io/badge/0-Polling_Loops-E17055?style=for-the-badge)](#-real-time-sse-events)
 
 </div>
 
----
+<br/>
 
-## 📸 Preview
+<div align="center">
 
-| Customer Experience | Kitchen Station (KDS) | Admin POS & Billing |
-|:---:|:---:|:---:|
-| ![Homepage](docs/screenshots/homepage.png) | ![KDS](docs/screenshots/kds.png) | ![Billing](docs/screenshots/billing.png) |
+[☕ What is it](#-what-is-addadotcom) • [✨ Features](#-features) • [🏗 Architecture](#-architecture) • [🚀 Quick Start](#-quick-start) • [🔌 API Reference](#-api-reference) • [⚡ Real-Time SSE](#-real-time-sse-events) • [🗺 Roadmap](#-roadmap) • [📸 Screenshots](#-screenshots)
+
+</div>
 
 ---
 
@@ -36,65 +53,107 @@ Unlike legacy restaurant software that relies on heavy desktop client installati
 
 ---
 
-## 🛠 Tech Stack
+## 💥 The Problem with Legacy POS Systems
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Framework** | Next.js 14 App Router | SSR, API routes, file-based routing, edge optimization |
-| **Language** | TypeScript 5 | End-to-end type safety & developer ergonomics |
-| **Database** | PostgreSQL + Prisma ORM | Relational data integrity, complex transactional queries |
-| **Auth** | NextAuth.js v4 | Session management, RBAC, secure cookie auth |
-| **State** | Zustand v5 | Cart persistence, UI state, client-side caching |
-| **Styling** | TailwindCSS v3 | Utility-first styling, custom design tokens, dark mode |
-| **Animation** | Framer Motion v12 + GSAP v3 + Lenis | Smooth page transitions, physics-based UI, inertia scroll |
-| **Charts** | Recharts v2 | Revenue trends, peak hours heatmap, analytics dashboard |
-| **Real-time** | Server-Sent Events (SSE) | Live KDS kitchen stream, table updates, order tracking |
-| **PDF** | @react-pdf/renderer v4 | Client & server-side downloadable tax invoices |
-| **QR Codes** | qrcode.react v4 | Table QR ordering, invoice authentication links |
-| **Validation** | Zod v4 | API schema validation & runtime type guards |
-| **Notifications** | react-hot-toast | SSE-triggered admin alerts & audio chime triggers |
-| **Query** | TanStack Query v5 | Server state hydration & optimistic UI updates |
-| **Deployment** | Vercel + Neon PostgreSQL | Serverless runtime, edge CDN, zero-cold-start DB |
+> Stop juggling paper KOTs, WhatsApp order screenshots, and disconnected billing software.
+
+| ❌ The daily pain | ✅ How AddaDotCom fixes it |
+|-------------------|--------------------------|
+| 📋 Paper KOTs get lost, misread, or delayed | **Real-time KDS** — orders appear on the kitchen screen in &lt;500ms |
+| 🔄 Staff shout orders across the counter | **Zero-touch QR ordering** — customer orders direct to kitchen, no staff needed |
+| 🧾 Manual bill calculation errors | **Auto-computed GST bills** — CGST/SGST split, service charge, discounts, rounding |
+| 💰 No idea what's selling or when it's busy | **Analytics dashboard** — peak hours heatmap, daily/weekly/yearly revenue trends |
+| 📱 Customers ask "where is my order?" constantly | **Live order tracker** — customer tracks status in real-time on their phone |
+| 🖨️ Printing invoices from Excel templates | **PDF tax invoices** — QR-verified, downloadable, GST-compliant, auto-generated |
+| 📦 "We ran out of milk again" | **Inventory alerts** — low-stock notifications before you run out |
+| 👤 No record of who's a regular | **Loyalty points engine** — earn 10pts/₹100, tier progression, visible on every invoice |
 
 ---
 
 ## ✨ Features
 
-### 👤 Customer Experience
-- 🍽 **Browsable Menu** — Category filters, veg/non-veg tags, live search, and customization options.
-- 🛒 **Persistent Cart** — Add-ons, size variants, special cooking instructions, and quantity adjustment.
-- 📱 **QR Table Ordering** — Instant scan table QR code → menu auto-loads with pre-bound Table ID.
-- 🎯 **3 Order Types** — Dine-in (with table assignment), Takeaway, and Delivery mode.
-- 🎟 **Promo Codes** — DB-driven discount coupons with usage limits and expiration checks.
-- 📍 **Live Order Tracker** — Real-time SSE status stepper: *Placed → Accepted → Preparing → Ready → Served*.
-- 🧾 **Digital Invoice** — QR-verified e-receipt, downloadable tax PDF, and CGST/SGST tax breakdown.
-- ⭐ **Reviews & Ratings** — Post-meal feedback submitted directly via invoice QR scan.
-- 🏆 **Loyalty Points** — Earn 10 points per ₹100 spent with tier progression (Bronze → Platinum).
-- 📅 **Table Reservations** — Date, time slot, and party size picker with unique booking code generation.
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <h3>👤 Customer</h3>
+      <ul>
+        <li>🍽 Browsable menu with category filters, veg/non-veg tags &amp; customizations</li>
+        <li>📱 <b>Contactless QR table ordering</b> — scan → menu loads → table pre-selected</li>
+        <li>🛒 Persistent cart with add-ons, variants &amp; special notes</li>
+        <li>📍 <b>Live order tracker</b> — SSE real-time status stepper</li>
+        <li>🧾 QR-verified digital tax invoice (PDF download)</li>
+        <li>⭐ Post-meal ratings via invoice QR scan</li>
+        <li>🏆 Loyalty points (10pts/₹100) with Bronze→Platinum tiers</li>
+        <li>📅 Table reservation with party size &amp; booking code</li>
+      </ul>
+    </td>
+    <td width="33%" valign="top">
+      <h3>👨‍🍳 Kitchen</h3>
+      <ul>
+        <li>🖥 <b>KDS Station Mode</b> — fullscreen, no sidebar, tablet-optimised</li>
+        <li>🎨 Color-coded timers: Green &lt;5m · Amber &lt;15m · Red &gt;15m</li>
+        <li>📢 <b>Audio chime</b> on every incoming ticket</li>
+        <li>🔄 Single-tap bump to advance status</li>
+        <li>📊 Item aggregator — "Prepare: 6× Cold Coffee, 4× Risotto"</li>
+        <li>⚡ SSE-powered stream &lt;500ms, zero polling</li>
+      </ul>
+    </td>
+    <td width="33%" valign="top">
+      <h3>🏢 Admin &amp; POS</h3>
+      <ul>
+        <li>📊 <b>Analytics</b> — revenue trends, peak hours heatmap, category sales</li>
+        <li>💳 POS billing — table-linked, split payments, CGST/SGST auto-split</li>
+        <li>🗺 Visual table floor — colour-coded real-time grid</li>
+        <li>📦 Inventory with low-stock alerts &amp; adjustment logs</li>
+        <li>🎫 Coupon engine — DB-driven, usage caps, expiry</li>
+        <li>📋 Order history — search, filter, CSV export</li>
+        <li>⚙️ Persistent settings — GSTIN, tax rates, service charge</li>
+        <li>🔔 <b>Global admin toasts</b> on every admin page via SSE</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-### 👨‍🍳 Kitchen Operations
-- 🖥 **KDS Station Mode** — Fullscreen, no-sidebar kitchen display optimized for cook lines.
-- 🎨 **Color-Coded Timers** — Green (<5m) · Amber (<15m) · Red (>15m) urgency indicators.
-- 📢 **Audio Chime Alerts** — Instant web audio notifications triggered upon every incoming order.
-- 🔄 **Single-Tap Bump** — Advance ticket status (Preparing → Ready) with zero confirmation overhead.
-- 📊 **Item Aggregator** — Consolidated view summarizing total items to cook across all active tickets.
-- ⚡ **Real-Time Stream** — SSE-powered broadcast with under 500ms latency without polling.
+---
 
-### 🏢 Admin & POS Control
-- 📊 **Analytics Dashboard** — Revenue trends (today/week/month/year), peak hours heatmap, category sales.
-- 💳 **POS Billing** — Table-linked order bill generation, split payments (Cash/UPI/Card), CGST/SGST breakdown.
-- 🗺 **Visual Table Floor** — Color-coded interactive grid (Free, Occupied, Reserved, Bill Requested).
-- 📦 **Inventory Management** — Stock level tracking, low-stock threshold alerts, and stock adjustment logs.
-- 🎫 **Coupon Engine** — Create, edit, and disable promo codes with custom percentage or fixed rules.
-- 👥 **Staff Management** — Role assignment, cashier tracking, and audit logging.
-- 📋 **Order History** — Comprehensive audit trail with multi-filter search and date range selection.
-- 📈 **Reports & Export** — One-click CSV export for accounting and tax compliance.
-- ⚙️ **Persistent Settings** — Cafe info, GSTIN, service charge rates, and reservation rules.
-- 🔔 **Global Admin Toasts** — Persistent background notifications across all admin sub-pages.
+## 🏆 AddaDotCom vs Legacy POS Systems
+
+| Feature | AddaDotCom | PetPooja / Toast | WhatsApp + Excel |
+|---------|-----------|-----------------|-----------------|
+| 🌐 Open source | **✅ MIT** | ❌ Proprietary | — |
+| 💰 Cost | **Free to self-host** | ₹3,000–15,000/mo | "Free" (hidden cost) |
+| 📱 QR table ordering | **✅ Built-in** | ✅ Add-on | ❌ |
+| ⚡ Real-time KDS | **✅ SSE, &lt;500ms** | ✅ (polling) | ❌ |
+| 🧾 GST-compliant PDF invoice | **✅ Auto-generated** | ✅ | Manual |
+| 📊 Analytics &amp; heatmaps | **✅ Built-in** | ✅ Basic | ❌ |
+| 🏆 Loyalty program | **✅ Built-in** | Add-on $$$ | ❌ |
+| 📦 Inventory management | **✅ Built-in** | Add-on $$$ | Spreadsheet |
+| 🔧 Customisable | **✅ Full source** | ❌ | — |
+| 🚀 Deploy in 5 minutes | **✅ Vercel button** | ❌ Hours of setup | — |
 
 ---
 
 ## 🏗 Architecture
+
+```
+Customer Browser                    Kitchen / Admin                     Database
+─────────────────                   ──────────────────                  ──────────────
+Homepage                            /admin/kitchen (KDS)                PostgreSQL
+Menu + Cart         POST /api/orders ──────────────────►  SSE Broadcast  ┌─ Users
+Order Checkout ───────────────────► /api/sse (Event Bus) ◄────────────── ├─ Orders
+/track/:id ◄── SSE order-updated ── │  ┌─ new-order                     ├─ Bills
+/invoice/:n         POST /api/billing│  ├─ order-updated                 ├─ Menu
+                ─────────────────── │  ├─ bill-paid                     ├─ Tables
+                                    │  ├─ table-updated                  └─ Settings
+                /admin/billing      │  ├─ reservation-created
+                /admin/tables ◄─────┘  └─ review-approved
+                /admin/analytics
+```
+
+<details>
+<summary><b>View Detailed System Flowchart (Mermaid)</b></summary>
+
+<br/>
 
 ```mermaid
 graph TB
@@ -138,81 +197,29 @@ graph TB
     O --> DB
 ```
 
----
-
-## 🗄 Database Models
-
-| Model | Key Fields | Relations / Description |
-|-------|-----------|-------------------------|
-| `User` | `id`, `name`, `email`, `role`, `loyaltyPoints` | Orders, Reservations, Cashier Bills, OAuth Accounts |
-| `Category` | `id`, `name`, `slug`, `sortOrder` | Parent category grouping for MenuItems |
-| `MenuItem` | `id`, `categoryId`, `price`, `tags`, `variants`, `addons` | Belongs to Category; stores JSON options & inventory recipe |
-| `CafeTable` | `id`, `number`, `capacity`, `zone`, `status` | Linked to Orders and Reservations; tracks floor status |
-| `Reservation` | `id`, `bookingCode`, `date`, `timeSlot`, `status` | Linked to User and CafeTable; tracks table bookings |
-| `Order` | `id`, `orderNumber`, `type`, `status`, `items` (JSON) | Primary order entity linked to User, CafeTable, and Bill |
-| `Bill` | `id`, `billNumber`, `total`, `taxes`, `payments`, `status` | GST Tax bill linked 1:1 to Order and Cashier User |
-| `InventoryItem` | `id`, `name`, `unit`, `quantity`, `lowStockThreshold` | Tracks raw ingredients & stock alert levels |
-| `StockLog` | `id`, `inventoryItemId`, `change`, `reason` | Audit history for stock additions/deductions |
-| `PromoCode` | `id`, `code`, `type`, `value`, `usageCount`, `isActive` | Promotional coupon codes with DB constraints |
-| `Review` | `id`, `author`, `rating`, `comment`, `approved` | Customer reviews requiring admin approval |
-| `Setting` | `key`, `value`, `group` | Key-value system config (GSTIN, service tax, cafe info) |
+</details>
 
 ---
 
-## 🔌 API Reference
+## 🛠 Tech Stack
 
-### Orders API
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/orders` | List active orders (filterable by date, status, order type) |
-| `POST` | `/api/orders` | Place new order & trigger SSE broadcast (`new-order`) |
-| `GET` | `/api/orders/[id]` | Fetch single order details with linked bill and table |
-| `PUT` | `/api/orders/[id]` | Update order status & trigger SSE broadcast (`order-updated`) |
-| `GET` | `/api/orders/history` | Paginated order history with search and filtering |
-| `GET` | `/api/orders/analytics` | Revenue KPIs, peak hours heatmap, and top sellers |
-| `GET` | `/api/orders/monthly` | Month-by-month revenue breakdown for annual report |
-| `GET` | `/api/orders/export` | Export orders dataset as downloadable CSV |
-
-### Billing & POS API
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/billing` | Create tax bill, execute payment split, and release table |
-| `GET` | `/api/orders/[id]/invoice` | Generate complete PDF/print invoice payload |
-| `GET` | `/api/invoices/public` | Public e-receipt lookup by bill number or QR token |
-
-### Real-Time SSE Engine
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/sse` | Open persistent Server-Sent Events stream for live updates |
-
-### System & Core API
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` / `PUT` | `/api/settings` | Retrieve or update system configuration settings |
-| `GET` / `POST` | `/api/menu` | List menu items with category filtering or create new item |
-| `GET` / `POST` / `PUT` | `/api/tables/[id]` | Table CRUD management and live floor status updates |
-| `GET` / `POST` | `/api/reservations` | Reserve tables and manage booking statuses |
-| `POST` | `/api/promo` | Validate coupon code against DB rules & recalculate subtotal |
-| `GET` / `POST` | `/api/reviews` | Submit customer review or approve pending feedback |
-| `GET` / `POST` | `/api/inventory` | Inventory management & stock adjustment logging |
-| `GET` | `/api/dashboard` | Aggregated executive KPIs for admin home dashboard |
-
----
-
-## ⚡ Real-Time SSE Events
-
-All real-time user experiences are powered by a single pub/sub broadcast endpoint at `/api/sse`.
-
-| Event Name | Payload Structure | Trigger Source | Primary Consumers |
-|------------|-------------------|----------------|-------------------|
-| `new-order` | `{ orderId, orderNumber, type, tableId, itemCount }` | `POST /api/orders` | Kitchen KDS, Admin Orders Queue, Table Floor Plan |
-| `order-updated` | `{ orderId, orderNumber, status, previousStatus }` | `PUT /api/orders/[id]` | Customer Order Tracker, Kitchen KDS |
-| `bill-paid` | `{ orderId, billNumber, total, tableId }` | `POST /api/billing` | Order Tracker, Table Floor Plan, Admin Dashboard |
-| `table-updated` | `{ tableId, tableNumber, status }` | Tables / Orders / Billing | Visual Table Floor Plan |
-| `reservation-created` | `{ id, guestName, tableId, tableNumber }` | `POST /api/reservations` | Admin Table Floor Plan & Reservations View |
-| `reservation-updated` | `{ id, status, tableId }` | `PUT /api/reservations/[id]` | Tables & Reservations Manager |
-| `review-approved` | `{ id, approved }` | `PUT /api/reviews/[id]` | Customer Homepage Testimonials & Menu Ratings |
-| `inventory-updated` | `{ itemId, name, quantity }` | `PUT /api/inventory/[id]` | Admin Inventory Manager |
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Framework** | Next.js 14 App Router | SSR, API routes, file-based routing, edge optimization |
+| **Language** | TypeScript 5 | End-to-end type safety &amp; developer ergonomics |
+| **Database** | PostgreSQL + Prisma ORM | Relational data integrity, complex transactional queries |
+| **Auth** | NextAuth.js v4 | Session management, RBAC, secure cookie auth |
+| **State** | Zustand v5 | Cart persistence, UI state, client-side caching |
+| **Styling** | TailwindCSS v3 | Utility-first styling, custom design tokens, dark mode |
+| **Animation** | Framer Motion v12 + GSAP v3 + Lenis | Smooth page transitions, physics-based UI, inertia scroll |
+| **Charts** | Recharts v2 | Revenue trends, peak hours heatmap, analytics dashboard |
+| **Real-time** | Server-Sent Events (SSE) | Live KDS kitchen stream, table updates, order tracking |
+| **PDF** | @react-pdf/renderer v4 | Client &amp; server-side downloadable tax invoices |
+| **QR Codes** | qrcode.react v4 | Table QR ordering, invoice authentication links |
+| **Validation** | Zod v4 | API schema validation &amp; runtime type guards |
+| **Notifications** | react-hot-toast | SSE-triggered admin alerts &amp; audio chime triggers |
+| **Query** | TanStack Query v5 | Server state hydration &amp; optimistic UI updates |
+| **Deployment** | Vercel + Neon PostgreSQL | Serverless runtime, edge CDN, zero-cold-start DB |
 
 ---
 
@@ -298,7 +305,105 @@ Use these pre-configured seed accounts to explore the system:
 
 ---
 
-## 📁 Project Structure
+## 🎬 AddaDotCom in Action
+
+<div align="center">
+<table>
+  <tr>
+    <td align="center" width="280">
+      <a href="https://addadotcom.vercel.app">
+        <img src="docs/screenshots/video-thumb-customer.png" alt="Customer Ordering Flow" width="260"/>
+      </a><br/>
+      <b>Customer QR Ordering Flow</b><br/>
+      <sub>Scan → Browse → Order → Track</sub>
+    </td>
+    <td align="center" width="280">
+      <a href="https://addadotcom.vercel.app/admin/kitchen">
+        <img src="docs/screenshots/video-thumb-kds.png" alt="Kitchen Display System" width="260"/>
+      </a><br/>
+      <b>Kitchen Display System (KDS)</b><br/>
+      <sub>Live tickets, timers, audio alerts</sub>
+    </td>
+    <td align="center" width="280">
+      <a href="https://addadotcom.vercel.app/admin/billing">
+        <img src="docs/screenshots/video-thumb-billing.png" alt="POS Billing" width="260"/>
+      </a><br/>
+      <b>POS Billing &amp; Invoice</b><br/>
+      <sub>Bill generation, payment, PDF invoice</sub>
+    </td>
+  </tr>
+</table>
+</div>
+
+---
+
+<details>
+<summary><b>🔌 Full API Reference — 15 Route Groups</b></summary>
+
+<br/>
+
+### Orders API
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/orders` | List active orders (filterable by date, status, order type) |
+| `POST` | `/api/orders` | Place new order &amp; trigger SSE broadcast (`new-order`) |
+| `GET` | `/api/orders/[id]` | Fetch single order details with linked bill and table |
+| `PUT` | `/api/orders/[id]` | Update order status &amp; trigger SSE broadcast (`order-updated`) |
+| `GET` | `/api/orders/history` | Paginated order history with search and filtering |
+| `GET` | `/api/orders/analytics` | Revenue KPIs, peak hours heatmap, and top sellers |
+| `GET` | `/api/orders/monthly` | Month-by-month revenue breakdown for annual report |
+| `GET` | `/api/orders/export` | Export orders dataset as downloadable CSV |
+
+### Billing &amp; POS API
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/billing` | Create tax bill, execute payment split, and release table |
+| `GET` | `/api/orders/[id]/invoice` | Generate complete PDF/print invoice payload |
+| `GET` | `/api/invoices/public` | Public e-receipt lookup by bill number or QR token |
+
+### Real-Time SSE Engine
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/sse` | Open persistent Server-Sent Events stream for live updates |
+
+### System &amp; Core API
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` / `PUT` | `/api/settings` | Retrieve or update system configuration settings |
+| `GET` / `POST` | `/api/menu` | List menu items with category filtering or create new item |
+| `GET` / `POST` / `PUT` | `/api/tables/[id]` | Table CRUD management and live floor status updates |
+| `GET` / `POST` | `/api/reservations` | Reserve tables and manage booking statuses |
+| `POST` | `/api/promo` | Validate coupon code against DB rules &amp; recalculate subtotal |
+| `GET` / `POST` | `/api/reviews` | Submit customer review or approve pending feedback |
+| `GET` / `POST` | `/api/inventory` | Inventory management &amp; stock adjustment logging |
+| `GET` | `/api/dashboard` | Aggregated executive KPIs for admin home dashboard |
+
+</details>
+
+<details>
+<summary><b>⚡ Real-Time SSE Event Catalogue</b></summary>
+
+<br/>
+
+All real-time user experiences are powered by a single pub/sub broadcast endpoint at `/api/sse`.
+
+| Event Name | Payload Structure | Trigger Source | Primary Consumers |
+|------------|-------------------|----------------|-------------------|
+| `new-order` | `{ orderId, orderNumber, type, tableId, itemCount }` | `POST /api/orders` | Kitchen KDS, Admin Orders Queue, Table Floor Plan |
+| `order-updated` | `{ orderId, orderNumber, status, previousStatus }` | `PUT /api/orders/[id]` | Customer Order Tracker, Kitchen KDS |
+| `bill-paid` | `{ orderId, billNumber, total, tableId }` | `POST /api/billing` | Order Tracker, Table Floor Plan, Admin Dashboard |
+| `table-updated` | `{ tableId, tableNumber, status }` | Tables / Orders / Billing | Visual Table Floor Plan |
+| `reservation-created` | `{ id, guestName, tableId, tableNumber }` | `POST /api/reservations` | Admin Table Floor Plan &amp; Reservations View |
+| `reservation-updated` | `{ id, status, tableId }` | `PUT /api/reservations/[id]` | Tables &amp; Reservations Manager |
+| `review-approved` | `{ id, approved }` | `PUT /api/reviews/[id]` | Customer Homepage Testimonials &amp; Menu Ratings |
+| `inventory-updated` | `{ itemId, name, quantity }` | `PUT /api/inventory/[id]` | Admin Inventory Manager |
+
+</details>
+
+<details>
+<summary><b>📁 Complete Project Structure</b></summary>
+
+<br/>
 
 ```
 addadotcom/
@@ -347,9 +452,12 @@ addadotcom/
 └── docker-compose.yml         # Local Docker setup (Next.js + Postgres + Redis)
 ```
 
----
+</details>
 
-## 🗺 Roadmap
+<details>
+<summary><b>🗺 Roadmap — What's Built vs Planned</b></summary>
+
+<br/>
 
 ### ✅ Completed Features
 - [x] Customer ordering flow (Browse → Cart → Custom Addons → Checkout → Live Track).
@@ -364,30 +472,66 @@ addadotcom/
 - [x] Customer feedback system with admin moderation and menu rating display.
 
 ### 🔄 In Progress
-- [ ] Payment gateway integration (Razorpay & PhonePe).
-- [ ] WhatsApp & SMS automated order notifications (MSG91 / Twilio).
-- [ ] Delivery driver assignment & real-time dispatch tracking.
+- [ ] Payment gateway integration (Razorpay &amp; PhonePe).
+- [ ] WhatsApp &amp; SMS automated order notifications (MSG91 / Twilio).
+- [ ] Delivery driver assignment &amp; real-time dispatch tracking.
 
 ### 📋 Planned
-- [ ] Multi-branch & multi-outlet management.
+- [ ] Multi-branch &amp; multi-outlet management.
 - [ ] Mobile companion app built with React Native.
-- [ ] AI-assisted menu item sales recommendations & demand forecasting.
+- [ ] AI-assisted menu item sales recommendations &amp; demand forecasting.
+
+</details>
 
 ---
 
-## 📸 Screenshots Gallery
+## 📸 Screenshots
 
-| Customer Homepage | Menu & Cart | Order Tracker |
-|:-:|:-:|:-:|
-| ![Homepage](docs/screenshots/homepage.png) | ![Menu](docs/screenshots/menu.png) | ![Tracker](docs/screenshots/tracker.png) |
+<details>
+<summary><b>View full screenshot gallery (9 screens)</b></summary>
 
-| Kitchen KDS | Admin POS & Billing | Analytics Dashboard |
-|:-:|:-:|:-:|
-| ![KDS](docs/screenshots/kds.png) | ![Billing](docs/screenshots/billing.png) | ![Analytics](docs/screenshots/analytics.png) |
+<br/>
 
-| Digital Tax Invoice | Table Floor Plan | Contactless QR Order |
-|:-:|:-:|:-:|
-| ![Invoice](docs/screenshots/invoice.png) | ![Tables](docs/screenshots/tables.png) | ![QR](docs/screenshots/qr.png) |
+| Page | Screenshot | Page | Screenshot |
+|------|-----------|------|-----------|
+| Homepage | ![Homepage](docs/screenshots/01-homepage.png) | Menu & Cart | ![Menu](docs/screenshots/02-menu.png) |
+| Order Tracker | ![Tracker](docs/screenshots/03-tracker.png) | Kitchen KDS | ![KDS](docs/screenshots/04-kds.png) |
+| POS Billing | ![Billing](docs/screenshots/05-billing.png) | Analytics | ![Analytics](docs/screenshots/06-analytics.png) |
+| Tax Invoice | ![Invoice](docs/screenshots/07-invoice.png) | Table Floor | ![Tables](docs/screenshots/08-tables.png) |
+| QR Generator | ![QR](docs/screenshots/09-qr.png) | | |
+
+</details>
+
+---
+
+## 📊 Star History
+
+<div align="center">
+<a href="https://star-history.com/#yourusername/addadotcom&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=yourusername/addadotcom&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=yourusername/addadotcom&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=yourusername/addadotcom&type=Date" />
+  </picture>
+</a>
+</div>
+
+---
+
+## 🙏 Built With & Inspired By
+
+AddaDotCom stands on the shoulders of these excellent open-source projects:
+
+| Project | ⭐ | How it shapes AddaDotCom |
+|---------|---|--------------------------|
+| **[Next.js](https://github.com/vercel/next.js)** | 130k+ | App Router, SSR, API routes — the entire application framework |
+| **[Prisma](https://github.com/prisma/prisma)** | 40k+ | Type-safe PostgreSQL ORM powering all DB queries |
+| **[Framer Motion](https://github.com/framer/motion)** | 25k+ | Page transitions, modal animations, KDS ticket entrance |
+| **[GSAP](https://github.com/greensock/GSAP)** | 20k+ | Hero headline character animation, scroll-reveal sequences |
+| **[Lenis](https://github.com/darkroomengineering/lenis)** | 8k+ | Buttery smooth scroll across all customer-facing pages |
+| **[Recharts](https://github.com/recharts/recharts)** | 24k+ | All 6 chart types in the analytics dashboard |
+| **[shadcn/ui](https://github.com/shadcn-ui/ui)** | 80k+ | Base component patterns for the entire design system |
+| **[Zustand](https://github.com/pmndrs/zustand)** | 50k+ | Cart persistence and UI state across the customer app |
 
 ---
 
@@ -407,8 +551,14 @@ Contributions are warmly welcomed! To contribute:
 
 Distributed under the **MIT License**. See `LICENSE` for more information.
 
+---
+
 <div align="center">
 
-Built with ❤️ for Modern Hospitality & Enterprise Cafés.
+**[⬆ Back to top](#-addadotcom)**
+
+Built with ☕ for modern Indian cafés and restaurants.
+
+<sub>AddaDotCom v1.0 · Next.js 14 · PostgreSQL · MIT License · <a href="https://addadotcom.vercel.app">addadotcom.vercel.app</a></sub>
 
 </div>
