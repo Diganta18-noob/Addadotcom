@@ -7,6 +7,25 @@
     <pattern id="grid-why" width="30" height="30" patternUnits="userSpaceOnUse">
       <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#1E293B" stroke-width="0.5" stroke-opacity="0.3" />
     </pattern>
+
+    <linearGradient id="sheen-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#34D399" stop-opacity="0" />
+      <stop offset="50%" stop-color="#34D399" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#34D399" stop-opacity="0" />
+    </linearGradient>
+
+    <style>
+      @keyframes pulse-dot-green {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.3; transform: scale(0.7); }
+      }
+      @keyframes sheen-move {
+        0% { transform: translateX(-400px); }
+        100% { transform: translateX(400px); }
+      }
+      .green-pulse-dot { animation: pulse-dot-green 1.5s ease-in-out infinite; }
+      .sheen-layer { animation: sheen-move 4s linear infinite; }
+    </style>
   </defs>
 
   <rect width="900" height="520" rx="16" fill="url(#bg-grad-why)" stroke="#334155" stroke-width="1.5" />
@@ -50,23 +69,32 @@
     <rect width="400" height="42" rx="12" fill="#047857" opacity="0.3" />
     <text x="20" y="27" fill="#34D399" font-family="sans-serif" font-size="14" font-weight="800" letter-spacing="1">✅ HOW ADDADOTCOM FIXES IT</text>
 
+    <!-- Animated Light Sheen over Column -->
+    <rect width="200" height="380" fill="url(#sheen-grad)" class="sheen-layer" />
+
     <!-- Bullets -->
     <g transform="translate(20, 65)" font-family="sans-serif" font-size="13" fill="#6EE7B7">
+      <circle cx="-6" cy="-4" r="3" fill="#34D399" class="green-pulse-dot" />
       <text x="0" y="0" font-weight="700">🖥 Real-Time KDS Station (&lt;500ms)</text>
       <text x="0" y="18" font-size="11" fill="#059669">Color-coded timers, audio chime, zero paper lost</text>
 
+      <circle cx="-6" cy="51" r="3" fill="#34D399" class="green-pulse-dot" />
       <text x="0" y="55" font-weight="700">📱 Contactless Table QR Ordering</text>
       <text x="0" y="73" font-size="11" fill="#059669">Scan → Menu auto-loads → Order direct to cook line</text>
 
+      <circle cx="-6" cy="106" r="3" fill="#34D399" class="green-pulse-dot" />
       <text x="0" y="110" font-weight="700">🧾 Auto-Computed GST PDF Invoices</text>
       <text x="0" y="128" font-size="11" fill="#059669">QR-verified e-receipts, downloadable tax breakdown</text>
 
+      <circle cx="-6" cy="161" r="3" fill="#34D399" class="green-pulse-dot" />
       <text x="0" y="165" font-weight="700">📍 Live Customer Order Tracker</text>
       <text x="0" y="183" font-size="11" fill="#059669">Real-time status stepper: Placed → Prep → Ready</text>
 
+      <circle cx="-6" cy="216" r="3" fill="#34D399" class="green-pulse-dot" />
       <text x="0" y="220" font-weight="700">📦 Low-Stock Inventory Alerts</text>
       <text x="0" y="238" font-size="11" fill="#059669">Automatic ingredient threshold warnings &amp; logs</text>
 
+      <circle cx="-6" cy="271" r="3" fill="#34D399" class="green-pulse-dot" />
       <text x="0" y="275" font-weight="700">🌐 100% Free &amp; Open Source (MIT)</text>
       <text x="0" y="293" font-size="11" fill="#059669">Self-host on Vercel + Neon with zero monthly fees</text>
     </g>

@@ -4,6 +4,47 @@
       <stop offset="0%" stop-color="#090D16" />
       <stop offset="100%" stop-color="#0F172A" />
     </linearGradient>
+
+    <!-- Glow Filters -->
+    <filter id="glow-indigo-qs" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="glow-amber-qs" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <style>
+      @keyframes dash-right-qs {
+        to {
+          stroke-dashoffset: -20;
+        }
+      }
+      @keyframes cursor-blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+      }
+      @keyframes circle-pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+      }
+      .arrow-line-indigo {
+        stroke: #6366F1;
+        stroke-width: 2;
+        stroke-dasharray: 4 4;
+        animation: dash-right-qs 0.8s linear infinite;
+      }
+      .arrow-line-amber {
+        stroke: #F59E0B;
+        stroke-width: 2;
+        stroke-dasharray: 4 4;
+        animation: dash-right-qs 0.8s linear infinite;
+      }
+      .cursor-1 { animation: cursor-blink 1s infinite; fill: #A5B4FC; }
+      .cursor-2 { animation: cursor-blink 1s infinite 0.3s; fill: #FCD34D; }
+      .cursor-3 { animation: cursor-blink 1s infinite 0.6s; fill: #6EE7B7; }
+    </style>
   </defs>
 
   <rect width="900" height="240" rx="16" fill="url(#bg-grad-setup)" stroke="#334155" stroke-width="1.5" />
@@ -14,29 +55,35 @@
 
   <!-- Step 1 -->
   <g transform="translate(40, 90)">
-    <rect width="250" height="110" rx="10" fill="#1E293B" stroke="#334155" stroke-width="1" />
+    <rect width="250" height="110" rx="10" fill="#1E293B" stroke="#6366F1" stroke-width="1.5" />
     <circle cx="30" cy="30" r="14" fill="#6366F1" />
     <text x="30" y="35" fill="#FFFFFF" font-family="sans-serif" font-size="12" font-weight="800" text-anchor="middle">1</text>
     <text x="55" y="34" fill="#FFFFFF" font-family="sans-serif" font-size="14" font-weight="700">Clone &amp; Install</text>
     <rect x="15" y="55" width="220" height="40" rx="6" fill="#090D16" />
-    <text x="25" y="79" fill="#A5B4FC" font-family="monospace" font-size="11">git clone &amp;&amp; npm install</text>
+    <text x="25" y="79" fill="#A5B4FC" font-family="monospace" font-size="10">git clone &amp;&amp; npm install<tspan class="cursor-1"> █</tspan></text>
   </g>
 
-  <!-- Arrow 1 -->
-  <path d="M 302 145 L 328 145" fill="none" stroke="#6366F1" stroke-width="2" stroke-dasharray="3 3" />
+  <!-- Arrow 1 (Animated Connector) -->
+  <path d="M 302 145 L 328 145" fill="none" class="arrow-line-indigo" />
+  <circle r="4" fill="#6366F1" filter="url(#glow-indigo-qs)">
+    <animateMotion path="M 302 145 L 328 145" dur="1s" repeatCount="indefinite" />
+  </circle>
 
   <!-- Step 2 -->
   <g transform="translate(335, 90)">
-    <rect width="250" height="110" rx="10" fill="#1E293B" stroke="#334155" stroke-width="1" />
+    <rect width="250" height="110" rx="10" fill="#1E293B" stroke="#F59E0B" stroke-width="1.5" />
     <circle cx="30" cy="30" r="14" fill="#F59E0B" />
     <text x="30" y="35" fill="#FFFFFF" font-family="sans-serif" font-size="12" font-weight="800" text-anchor="middle">2</text>
     <text x="55" y="34" fill="#FFFFFF" font-family="sans-serif" font-size="14" font-weight="700">Sync &amp; Seed DB</text>
     <rect x="15" y="55" width="220" height="40" rx="6" fill="#090D16" />
-    <text x="25" y="79" fill="#FCD34D" font-family="monospace" font-size="10">npx prisma db push &amp;&amp; seed</text>
+    <text x="25" y="79" fill="#FCD34D" font-family="monospace" font-size="10">npx prisma db push &amp;&amp; seed<tspan class="cursor-2"> █</tspan></text>
   </g>
 
-  <!-- Arrow 2 -->
-  <path d="M 597 145 L 623 145" fill="none" stroke="#F59E0B" stroke-width="2" stroke-dasharray="3 3" />
+  <!-- Arrow 2 (Animated Connector) -->
+  <path d="M 597 145 L 623 145" fill="none" class="arrow-line-amber" />
+  <circle r="4" fill="#F59E0B" filter="url(#glow-amber-qs)">
+    <animateMotion path="M 597 145 L 623 145" dur="1s" repeatCount="indefinite" />
+  </circle>
 
   <!-- Step 3 -->
   <g transform="translate(630, 90)">
@@ -45,6 +92,6 @@
     <text x="30" y="35" fill="#FFFFFF" font-family="sans-serif" font-size="12" font-weight="800" text-anchor="middle">3</text>
     <text x="55" y="34" fill="#34D399" font-family="sans-serif" font-size="14" font-weight="700">Launch Server</text>
     <rect x="15" y="55" width="200" height="40" rx="6" fill="#090D16" />
-    <text x="25" y="79" fill="#6EE7B7" font-family="monospace" font-size="11">npm run dev (Port 3000)</text>
+    <text x="25" y="79" fill="#6EE7B7" font-family="monospace" font-size="11">npm run dev<tspan class="cursor-3"> █</tspan></text>
   </g>
 </svg>
