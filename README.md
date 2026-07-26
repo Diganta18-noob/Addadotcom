@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/hero-banner.gif" alt="AddaDotCom — Restaurant Management System" width="100%" />
+<img src="docs/assets/hero-banner.svg" alt="AddaDotCom — Restaurant Management System" width="100%" />
 
 <br/>
 <br/>
@@ -54,7 +54,7 @@ Unlike legacy restaurant software that relies on heavy desktop client installati
 
 ## 💥 Why AddaDotCom?
 
-<img src="docs/assets/why-addadotcom.gif" alt="Why AddaDotCom — Pain vs Solution" width="100%" />
+<img src="docs/assets/why-addadotcom.svg" alt="Why AddaDotCom — Pain vs Solution" width="100%" />
 
 <br/>
 
@@ -136,7 +136,7 @@ Unlike legacy restaurant software that relies on heavy desktop client installati
 
 ## 🏗 Architecture & Workflow
 
-<img src="docs/assets/architecture-workflow.gif" alt="System Architecture and Event Workflow" width="100%" />
+<img src="docs/assets/architecture-workflow.svg" alt="System Architecture and Event Workflow" width="100%" />
 
 <br/>
 
@@ -210,7 +210,7 @@ graph TB
 
 ## ⚡ Real-Time SSE Engine
 
-<img src="docs/assets/realtime-engine.gif" alt="Real-Time SSE Engine Architecture" width="100%" />
+<img src="docs/assets/realtime-engine.svg" alt="Real-Time SSE Engine Architecture" width="100%" />
 
 <br/>
 
@@ -238,7 +238,7 @@ All real-time user experiences are powered by a single pub/sub broadcast endpoin
 
 ## 🚀 Quick Start
 
-<img src="docs/assets/quick-start-workflow.gif" alt="Quick Start Workflow" width="100%" />
+<img src="docs/assets/quick-start-workflow.svg" alt="Quick Start Workflow" width="100%" />
 
 <br/>
 
