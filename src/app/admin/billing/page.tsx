@@ -116,38 +116,35 @@ function AdminBillingContent() {
   // Fetch initial data
   const fetchData = useCallback(async (preserveTableId?: string) => {
     setLoading(true);
-    
     try {
-      const tablesRes = await fetch("/api/tables");
-      if (!tablesRes.ok) throw new Error(`Tables API error: ${tablesRes.status}`);
+      const [tablesRes, ordersRes] = await Promise.all([
+        fetch("/api/tables"),
+        fetch("/api/orders?today=true"),
+      ]);
+
       const tablesData = await tablesRes.json();
       if (tablesData.success && Array.isArray(tablesData.data)) {
         setTables(tablesData.data);
         if (preserveTableId) {
           setSelectedTableId(preserveTableId);
-        } else if (tableIdParam) {
+        } else if (tableIdParam && !selectedTableId) {
           setSelectedTableId(tableIdParam);
-        } else {
-          setSelectedTableId((prev) => prev || (tablesData.data.length > 0 ? tablesData.data[0].id : ""));
+        } else if (!selectedTableId && tablesData.data.length > 0) {
+          setSelectedTableId(tablesData.data[0].id);
         }
       }
-    } catch (error) {
-      console.error("Error fetching tables in billing:", error);
-    }
 
-    try {
-      const ordersRes = await fetch("/api/orders?today=true");
-      if (!ordersRes.ok) throw new Error(`Orders API error: ${ordersRes.status}`);
       const ordersData = await ordersRes.json();
       if (ordersData.success && Array.isArray(ordersData.data)) {
-        const parsed = ordersData.data.map((order: any) => ({
-          ...order,
-          items: typeof order.items === "string" ? JSON.parse(order.items) : order.items,
+        const parsed = ordersData.data.map((o: any) => ({
+          ...o,
+          items: typeof o.items === "string" ? JSON.parse(o.items) : o.items,
         }));
         setOrders(parsed);
       }
     } catch (error) {
-      console.error("Error fetching orders in billing:", error);
+      console.error("fetchData error:", error);
+      toast.error("Failed to refresh billing data");
     } finally {
       setLoading(false);
     }
@@ -159,10 +156,11 @@ function AdminBillingContent() {
   }, [fetchData]);
 
   useEffect(() => {
+    if (billPaid) return;
+
     if (!selectedTableId || orders.length === 0) {
       setActiveOrder(null);
       setBillItems([]);
-      setBillPaid(false);
       return;
     }
 
@@ -205,7 +203,7 @@ function AdminBillingContent() {
     setPromoCode("");
     setShowPayment(false);
     setShowReceipt(false);
-  }, [selectedTableId, orders]);
+  }, [selectedTableId, orders, billPaid]);
 
   // Calculations
   const subtotal = billItems.reduce((sum, item) => sum + item.total, 0);
@@ -266,22 +264,33 @@ function AdminBillingContent() {
       return;
     }
 
-    const amount = currentPaymentMethod === "CASH"
-      ? parseFloat(cashAmount) || balance
-      : balance;
+    let amount: number;
+    if (currentPaymentMethod === "CASH") {
+      const parsed = parseFloat(cashAmount);
+      amount = isNaN(parsed) || parsed <= 0 ? balance : parsed;
+    } else {
+      amount = balance;
+    }
 
-    if (amount <= 0) return;
+    const cappedAmount = Math.min(amount, balance);
 
-    const newPayments = [...payments, { method: currentPaymentMethod, amount: Math.min(amount, balance) }];
+    if (cappedAmount <= 0) {
+      toast.error("Please enter a valid payment amount");
+      return;
+    }
+
+    const newPayments = [...payments, { method: currentPaymentMethod, amount: cappedAmount }];
     setPayments(newPayments);
     setCashAmount("");
 
-    const newBalance = balance - Math.min(amount, balance);
+    const newTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
+    const newBalance = Math.max(0, grandTotal - newTotalPaid);
+
     if (newBalance <= 0) {
-      // POST the full payment to database
       setLoading(true);
       const capturedPaidOrderId = activeOrder.id;
       const capturedPaidTableId = selectedTableId;
+
       try {
         const res = await fetch("/api/billing", {
           method: "POST",
@@ -309,20 +318,22 @@ function AdminBillingContent() {
         const data = await res.json();
         if (data.success) {
           setBillPaid(true);
-          setShowReceipt(true);
           setPaidOrderId(capturedPaidOrderId);
-          toast.success("Bill paid in full and saved!");
-          await fetchData(capturedPaidTableId); // Refresh tables and orders preserving selected table
+          setShowReceipt(true);
+          toast.success("Bill paid in full! Receipt ready.");
+          await fetchData(capturedPaidTableId);
         } else {
-          toast.error("Failed to save bill transaction");
+          setPayments(payments);
+          toast.error(data.message || "Failed to save bill. Please try again.");
         }
       } catch (error) {
-        toast.error("Error connecting to billing system");
+        setPayments(payments);
+        toast.error("Network error. Please check connection and retry.");
       } finally {
         setLoading(false);
       }
     } else {
-      toast.success(`${currentPaymentMethod} payment of ${formatCurrency(amount)} recorded`);
+      toast.success(`${currentPaymentMethod} ₹${cappedAmount.toFixed(0)} recorded. Balance: ₹${newBalance.toFixed(0)}`);
     }
   };
 
