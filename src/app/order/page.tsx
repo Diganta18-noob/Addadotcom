@@ -116,6 +116,22 @@ export default function OrderPage() {
     },
     "new-order": () => fetchTables(),
     "bill-paid": () => fetchTables(),
+    "order-updated": (data) => {
+      if (
+        data?.orderId === currentOrder?.id ||
+        data?.orderNumber === currentOrder?.orderNumber
+      ) {
+        if (data.status) {
+          setLiveOrderStatus(data.status);
+          const msgs: Record<string, string> = {
+            ACCEPTED: "✅ Kitchen accepted your order!",
+            PREPARING: "👨‍🍳 Your order is being prepared...",
+            READY: "🔔 Your order is ready!",
+          };
+          if (msgs[data.status]) toast.success(msgs[data.status], { duration: 5000 });
+        }
+      }
+    },
   });
 
   React.useEffect(() => {
@@ -231,6 +247,12 @@ export default function OrderPage() {
           tableNumber: tableNumber || null,
           total: created.total || total,
           createdAt: created.createdAt,
+          items: items.map((i) => ({
+            menuItemName: i.menuItemName,
+            qty: i.quantity,
+            unitPrice: i.unitPrice,
+            totalPrice: i.totalPrice,
+          })),
         });
         setOrderPlaced(true);
         clearCart();
@@ -255,89 +277,230 @@ export default function OrderPage() {
     const trackId = currentOrder?.id || displayOrderNum;
 
     return (
-      <div className="pt-20 pb-24 lg:pb-12 min-h-screen flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md mx-auto text-center px-4 space-y-6"
-        >
-          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
-            <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
-          </div>
-          <h1 className="font-serif text-3xl font-bold">Active Order</h1>
-          <p className="text-muted-foreground">
-            Your order has been placed and is being prepared!
-          </p>
+      <div className="pt-20 pb-24 lg:pb-12 min-h-screen flex items-center justify-center bg-muted/20 px-4">
+        <div className="w-full max-w-md mx-auto py-8 space-y-6">
+          {/* Animated Checkmark Header */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.1 }}
+            className="relative w-24 h-24 mx-auto"
+          >
+            {/* Pulsing ring behind */}
+            <div className="absolute inset-0 rounded-full bg-green-400/20 animate-ping" />
+            {/* Solid circle */}
+            <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg shadow-green-500/30">
+              <CheckCircle className="w-12 h-12 text-white" strokeWidth={2.5} />
+            </div>
+          </motion.div>
 
-          <div className="p-5 rounded-xl bg-caramel/10 border border-caramel/20">
-            <p className="text-sm text-muted-foreground mb-1">Order Number / Code</p>
+          {/* Headline with stagger */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="space-y-1 text-center"
+          >
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground">
+              Order Placed! 🎉
+            </h1>
+            <p className="text-muted-foreground text-sm">
+              Your kitchen has been notified and is getting started
+            </p>
+          </motion.div>
+
+          {/* Order Identity Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="w-full rounded-2xl bg-gradient-to-br from-espresso to-espresso/80 text-cream p-5 space-y-3 shadow-xl"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-cream/60 text-xs uppercase tracking-wider font-semibold">Order ID</span>
+              <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 text-[10px] font-bold uppercase tracking-wide flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Live
+              </span>
+            </div>
             <p className="font-mono text-2xl font-bold text-caramel tracking-wider">
               {displayOrderNum}
             </p>
-            {activeOrder?.tableNumber && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Table Number: <span className="font-bold text-foreground">{activeOrder.tableNumber}</span>
-              </p>
-            )}
-          </div>
-
-          <div className="p-4 rounded-xl border border-border bg-card text-left space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground uppercase font-semibold">Status</span>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-caramel/10 text-caramel">
-                {currentStatus}
+            <div className="flex items-center gap-3 text-xs text-cream/70 flex-wrap pt-1">
+              {activeOrder?.tableNumber && (
+                <span className="flex items-center gap-1">
+                  🪑 Table {activeOrder.tableNumber}
+                </span>
+              )}
+              <span className="flex items-center gap-1">
+                🛍 {activeOrder?.type?.replace("_", " ") || "DINE IN"}
+              </span>
+              {(currentOrder as any)?.items?.length > 0 && (
+                <span className="flex items-center gap-1">
+                  📦 {(currentOrder as any).items.length} item{(currentOrder as any).items.length > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 pt-2 border-t border-cream/10">
+              <Clock className="w-3.5 h-3.5 text-caramel" />
+              <span className="text-xs text-cream/80">
+                Est. ready in <strong className="text-caramel">~15 minutes</strong>
               </span>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-green-500 pulse-dot" />
-              <span className="text-sm font-medium">Order Received</span>
-            </div>
-            <div className="ml-1.5 border-l-2 border-border pl-5 space-y-3 py-1 text-sm">
-              <div className={cn("flex items-center gap-3", ["ACCEPTED", "PREPARING", "READY", "SERVED", "COMPLETED"].includes(currentStatus) ? "text-foreground font-semibold" : "text-muted-foreground")}>
-                <div className="w-2 h-2 rounded-full bg-border" />
-                <span>Accepted by kitchen</span>
-              </div>
-              <div className={cn("flex items-center gap-3", ["PREPARING", "READY", "SERVED", "COMPLETED"].includes(currentStatus) ? "text-foreground font-semibold" : "text-muted-foreground")}>
-                <div className="w-2 h-2 rounded-full bg-border" />
-                <span>Preparing your order</span>
-              </div>
-              <div className={cn("flex items-center gap-3", ["READY", "SERVED", "COMPLETED"].includes(currentStatus) ? "text-foreground font-semibold" : "text-muted-foreground")}>
-                <div className="w-2 h-2 rounded-full bg-border" />
-                <span>Ready for pickup / serve</span>
-              </div>
-            </div>
-          </div>
+          </motion.div>
 
-          <div className="space-y-3">
+          {/* Order Progress Stepper */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="w-full bg-card border border-border/80 rounded-2xl p-4 shadow-xs"
+          >
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 text-center">
+              Order Progress
+            </p>
+
+            {(() => {
+              const steps = [
+                { key: "PLACED", label: "Placed", icon: "📋" },
+                { key: "ACCEPTED", label: "Accepted", icon: "✅" },
+                { key: "PREPARING", label: "Preparing", icon: "👨‍🍳" },
+                { key: "READY", label: "Ready", icon: "🔔" },
+              ];
+              const statusOrder = ["PLACED", "ACCEPTED", "PREPARING", "READY", "SERVED", "COMPLETED"];
+              const currentIdx = statusOrder.indexOf(currentStatus);
+
+              return (
+                <div className="flex items-center justify-between px-1">
+                  {steps.map((step, i) => {
+                    const stepIdx = statusOrder.indexOf(step.key);
+                    const isDone = currentIdx > stepIdx;
+                    const isActive = currentIdx === stepIdx;
+                    return (
+                      <React.Fragment key={step.key}>
+                        <div className="flex flex-col items-center gap-1.5 shrink-0">
+                          <motion.div
+                            animate={isActive ? { scale: [1, 1.15, 1] } : {}}
+                            transition={{ repeat: Infinity, duration: 2 }}
+                            className={cn(
+                              "w-10 h-10 rounded-full flex items-center justify-center text-base border-2 transition-all duration-500",
+                              isDone
+                                ? "bg-green-500 border-green-500 text-white shadow-md shadow-green-500/30"
+                                : isActive
+                                ? "bg-caramel border-caramel text-espresso shadow-md shadow-caramel/30 font-bold"
+                                : "bg-muted border-border text-muted-foreground"
+                            )}
+                          >
+                            {isDone ? "✓" : step.icon}
+                          </motion.div>
+                          <span
+                            className={cn(
+                              "text-[10px] font-bold text-center",
+                              isDone ? "text-green-600" : isActive ? "text-caramel font-extrabold" : "text-muted-foreground"
+                            )}
+                          >
+                            {step.label}
+                          </span>
+                        </div>
+                        {i < steps.length - 1 && (
+                          <div
+                            className={cn(
+                              "flex-1 h-0.5 mx-1.5 transition-all duration-700 rounded-full",
+                              currentIdx > stepIdx ? "bg-green-500" : "bg-border"
+                            )}
+                          />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </motion.div>
+
+          {/* Items Summary Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+            className="w-full rounded-2xl border border-border bg-card p-4 space-y-3 shadow-xs"
+          >
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              Your Order
+            </p>
+            <div className="space-y-2 max-h-36 overflow-y-auto custom-scrollbar">
+              {(currentOrder as any)?.items && (currentOrder as any).items.length > 0 ? (
+                (currentOrder as any).items.map((item: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <span className="text-foreground font-medium truncate flex-1 pr-2">
+                      {item.menuItemName}
+                    </span>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-muted-foreground text-xs font-semibold">×{item.qty || item.quantity}</span>
+                      <span className="font-semibold text-caramel font-mono text-xs">
+                        {formatCurrency(item.totalPrice || item.unitPrice * (item.qty || item.quantity))}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-2">
+                  Order confirmed ✓
+                </p>
+              )}
+            </div>
+            {(currentOrder as any)?.total && (
+              <div className="flex justify-between items-center pt-2 border-t border-border">
+                <span className="text-sm font-bold">Total</span>
+                <span className="font-serif font-bold text-caramel text-base">
+                  {formatCurrency((currentOrder as any).total)}
+                </span>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Action Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65 }}
+            className="w-full space-y-3"
+          >
             {trackId && (
               <Link
                 href={`/track/${trackId}`}
-                className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-caramel text-espresso font-bold rounded-xl text-sm hover:bg-caramel-400 transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-4 bg-caramel text-espresso font-bold rounded-2xl text-sm hover:bg-caramel/90 active:scale-[0.98] transition-all shadow-lg shadow-caramel/20 group"
               >
-                Track Live Order Progress <ArrowRight className="w-4 h-4" />
+                <span className="w-2 h-2 rounded-full bg-espresso/60 animate-pulse" />
+                Track Live Order Progress
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             )}
 
-            <div className="flex gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => {
                   clearActiveOrder();
                   setOrderPlaced(false);
                   setCurrentStep(1);
                 }}
-                className="flex-1 px-4 py-3 border border-border rounded-xl text-sm font-medium hover:bg-muted transition-colors text-center"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-border bg-card text-sm font-semibold hover:bg-muted active:scale-[0.98] transition-all"
               >
-                Place New Order
+                <Plus className="w-4 h-4" />
+                New Order
               </button>
               <Link
                 href="/menu"
-                className="flex-1 px-4 py-3 bg-espresso text-cream rounded-xl text-sm font-medium hover:bg-espresso-500 transition-colors text-center"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-espresso text-cream text-sm font-semibold hover:bg-espresso/90 active:scale-[0.98] transition-all"
               >
+                <UtensilsCrossed className="w-4 h-4" />
                 Browse Menu
               </Link>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
       </div>
     );
   }
