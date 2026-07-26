@@ -13,75 +13,22 @@
     </linearGradient>
 
     <!-- Glow Filters -->
-    <filter id="glow-blue" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="3" result="blur" />
+    <filter id="glow-blue" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
-    <filter id="glow-amber" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="3" result="blur" />
+    <filter id="glow-amber" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
-    <filter id="glow-green" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="3" result="blur" />
+    <filter id="glow-green" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
-    <filter id="glow-pink" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="3" result="blur" />
+    <filter id="glow-pink" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
-
-    <style>
-      @keyframes dash-flow {
-        to {
-          stroke-dashoffset: -24;
-        }
-      }
-      @keyframes pulse-glow {
-        0%, 100% { opacity: 0.15; transform: scale(1); }
-        50% { opacity: 0.35; transform: scale(1.08); }
-      }
-      @keyframes status-blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.3; }
-      }
-      .flow-line-blue {
-        stroke: #38BDF8;
-        stroke-width: 2;
-        stroke-dasharray: 6 6;
-        animation: dash-flow 1.2s linear infinite;
-      }
-      .flow-line-amber {
-        stroke: #F59E0B;
-        stroke-width: 2;
-        stroke-dasharray: 6 6;
-        animation: dash-flow 1.2s linear infinite;
-      }
-      .flow-line-green {
-        stroke: #10B981;
-        stroke-width: 2;
-        stroke-dasharray: 6 6;
-        animation: dash-flow 1.2s linear infinite;
-      }
-      .flow-line-pink {
-        stroke: #EC4899;
-        stroke-width: 2;
-        stroke-dasharray: 6 6;
-        animation: dash-flow 1.2s linear infinite;
-      }
-      .flow-line-indigo {
-        stroke: #6366F1;
-        stroke-width: 2;
-        stroke-dasharray: 6 6;
-        animation: dash-flow 1.2s linear infinite;
-      }
-      .hub-aura {
-        transform-origin: 450px 295px;
-        animation: pulse-glow 3s ease-in-out infinite;
-      }
-      .live-dot {
-        animation: status-blink 1.5s ease-in-out infinite;
-      }
-    </style>
   </defs>
 
   <!-- Background -->
@@ -92,10 +39,13 @@
   <text x="450" y="42" fill="#818CF8" font-family="sans-serif" font-size="12" font-weight="800" letter-spacing="2" text-anchor="middle">SYSTEM ARCHITECTURE &amp; DATA FLOW</text>
   <text x="450" y="70" fill="#FFFFFF" font-family="sans-serif" font-size="20" font-weight="800" text-anchor="middle">Sub-second Pub/Sub Event Broadcast System</text>
 
-  <!-- Live Pulse Badge -->
+  <!-- Live Pulse Badge with SMIL Animation -->
   <g transform="translate(450, 92)">
     <rect x="-85" y="-12" width="170" height="24" rx="12" fill="#064E3B" stroke="#10B981" stroke-width="1" />
-    <circle cx="-65" cy="0" r="4" fill="#34D399" class="live-dot" />
+    <circle cx="-65" cy="0" r="4" fill="#34D399">
+      <animate attributeName="opacity" values="1;0.2;1" dur="1.2s" repeatCount="indefinite" />
+      <animate attributeName="r" values="3.5;5;3.5" dur="1.2s" repeatCount="indefinite" />
+    </circle>
     <text x="-52" y="4" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">LIVE DATA STREAM</text>
   </g>
 
@@ -115,9 +65,12 @@
     <text x="115" y="68" fill="#F59E0B" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="middle">POST /api/billing</text>
   </g>
 
-  <!-- Central Hub: SSE Pub/Sub Event Bus Aura & Node -->
-  <circle cx="450" cy="295" r="140" fill="#6366F1" opacity="0.15" class="hub-aura" filter="blur(15px)" />
-  
+  <!-- Central Hub: SSE Pub/Sub Event Bus Aura & Node with SMIL Pulsing -->
+  <circle cx="450" cy="295" r="140" fill="#6366F1" opacity="0.15" filter="blur(15px)">
+    <animate attributeName="opacity" values="0.1;0.35;0.1" dur="2.8s" repeatCount="indefinite" />
+    <animate attributeName="r" values="130;155;130" dur="2.8s" repeatCount="indefinite" />
+  </circle>
+
   <g transform="translate(230, 240)">
     <rect width="440" height="110" rx="14" fill="url(#node-indigo)" stroke="#818CF8" stroke-width="2" />
     <text x="220" y="38" fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="900" text-anchor="middle">⚡ AddaDotCom SSE Event Bus (/api/sse)</text>
@@ -125,63 +78,92 @@
     <text x="220" y="85" fill="#A5B4FC" font-family="sans-serif" font-size="11" text-anchor="middle">Events: new-order · order-updated · bill-paid · table-updated</text>
   </g>
 
-  <!-- Connection Paths (Animated Dashed Lines) -->
-  <!-- Top Left to Center Hub -->
-  <path id="path-cust-sse" d="M 175 195 L 175 295 L 230 295" fill="none" class="flow-line-blue" />
-  <!-- Top Right to Center Hub -->
-  <path id="path-pos-sse" d="M 725 195 L 725 295 L 670 295" fill="none" class="flow-line-amber" />
+  <!-- Connection Paths with SMIL stroke-dashoffset animation -->
+  <!-- Path 1: Top Left to Center Hub -->
+  <path d="M 175 195 L 175 295 L 230 295" fill="none" stroke="#38BDF8" stroke-width="2" stroke-dasharray="6 6">
+    <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="1.2s" repeatCount="indefinite" />
+  </path>
 
-  <!-- Center Hub to Bottom Outbound Nodes -->
-  <path id="path-sse-kds" d="M 310 350 L 310 380 L 175 380 L 175 410" fill="none" class="flow-line-green" />
-  <path id="path-sse-tracker" d="M 450 350 L 450 410" fill="none" class="flow-line-pink" />
-  <path id="path-sse-db" d="M 590 350 L 590 380 L 725 380 L 725 410" fill="none" class="flow-line-indigo" />
+  <!-- Path 2: Top Right to Center Hub -->
+  <path d="M 725 195 L 725 295 L 670 295" fill="none" stroke="#F59E0B" stroke-width="2" stroke-dasharray="6 6">
+    <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="1.2s" repeatCount="indefinite" />
+  </path>
 
-  <!-- ANIMATED FLOW PARTICLES (Moving Glowing Circles along the paths) -->
+  <!-- Path 3: Center Hub to KDS -->
+  <path d="M 310 350 L 310 380 L 175 380 L 175 410" fill="none" stroke="#10B981" stroke-width="2" stroke-dasharray="6 6">
+    <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="1.2s" repeatCount="indefinite" />
+  </path>
+
+  <!-- Path 4: Center Hub to Tracker -->
+  <path d="M 450 350 L 450 410" fill="none" stroke="#EC4899" stroke-width="2" stroke-dasharray="6 6">
+    <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="1.2s" repeatCount="indefinite" />
+  </path>
+
+  <!-- Path 5: Center Hub to DB -->
+  <path d="M 590 350 L 590 380 L 725 380 L 725 410" fill="none" stroke="#818CF8" stroke-width="2" stroke-dasharray="6 6">
+    <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="1.2s" repeatCount="indefinite" />
+  </path>
+
+  <!-- SMIL ANIMATED MOVING PARTICLES -->
   <!-- Particle 1: Customer -> SSE -->
-  <circle r="5" fill="#38BDF8" filter="url(#glow-blue)">
-    <animateMotion path="M 175 195 L 175 295 L 230 295" dur="1.6s" repeatCount="indefinite" />
-  </circle>
-  <circle r="3" fill="#FFFFFF">
-    <animateMotion path="M 175 195 L 175 295 L 230 295" dur="1.6s" repeatCount="indefinite" />
-  </circle>
-  <circle r="4" fill="#38BDF8" filter="url(#glow-blue)">
-    <animateMotion path="M 175 195 L 175 295 L 230 295" dur="1.6s" begin="0.8s" repeatCount="indefinite" />
-  </circle>
+  <g>
+    <circle r="6" fill="#38BDF8" filter="url(#glow-blue)">
+      <animateMotion path="M 175 195 L 175 295 L 230 295" dur="1.6s" repeatCount="indefinite" />
+    </circle>
+    <circle r="3" fill="#FFFFFF">
+      <animateMotion path="M 175 195 L 175 295 L 230 295" dur="1.6s" repeatCount="indefinite" />
+    </circle>
+  </g>
+  <g>
+    <circle r="5" fill="#38BDF8" filter="url(#glow-blue)">
+      <animateMotion path="M 175 195 L 175 295 L 230 295" dur="1.6s" begin="0.8s" repeatCount="indefinite" />
+    </circle>
+  </g>
 
   <!-- Particle 2: POS -> SSE -->
-  <circle r="5" fill="#F59E0B" filter="url(#glow-amber)">
-    <animateMotion path="M 725 195 L 725 295 L 670 295" dur="1.6s" repeatCount="indefinite" />
-  </circle>
-  <circle r="3" fill="#FFFFFF">
-    <animateMotion path="M 725 195 L 725 295 L 670 295" dur="1.6s" repeatCount="indefinite" />
-  </circle>
-  <circle r="4" fill="#F59E0B" filter="url(#glow-amber)">
-    <animateMotion path="M 725 195 L 725 295 L 670 295" dur="1.6s" begin="0.8s" repeatCount="indefinite" />
-  </circle>
+  <g>
+    <circle r="6" fill="#F59E0B" filter="url(#glow-amber)">
+      <animateMotion path="M 725 195 L 725 295 L 670 295" dur="1.6s" repeatCount="indefinite" />
+    </circle>
+    <circle r="3" fill="#FFFFFF">
+      <animateMotion path="M 725 195 L 725 295 L 670 295" dur="1.6s" repeatCount="indefinite" />
+    </circle>
+  </g>
+  <g>
+    <circle r="5" fill="#F59E0B" filter="url(#glow-amber)">
+      <animateMotion path="M 725 195 L 725 295 L 670 295" dur="1.6s" begin="0.8s" repeatCount="indefinite" />
+    </circle>
+  </g>
 
   <!-- Particle 3: SSE -> KDS -->
-  <circle r="5" fill="#10B981" filter="url(#glow-green)">
-    <animateMotion path="M 310 350 L 310 380 L 175 380 L 175 410" dur="1.4s" begin="0.2s" repeatCount="indefinite" />
-  </circle>
-  <circle r="3" fill="#FFFFFF">
-    <animateMotion path="M 310 350 L 310 380 L 175 380 L 175 410" dur="1.4s" begin="0.2s" repeatCount="indefinite" />
-  </circle>
+  <g>
+    <circle r="6" fill="#10B981" filter="url(#glow-green)">
+      <animateMotion path="M 310 350 L 310 380 L 175 380 L 175 410" dur="1.4s" begin="0.2s" repeatCount="indefinite" />
+    </circle>
+    <circle r="3" fill="#FFFFFF">
+      <animateMotion path="M 310 350 L 310 380 L 175 380 L 175 410" dur="1.4s" begin="0.2s" repeatCount="indefinite" />
+    </circle>
+  </g>
 
   <!-- Particle 4: SSE -> Order Tracker -->
-  <circle r="5" fill="#EC4899" filter="url(#glow-pink)">
-    <animateMotion path="M 450 350 L 450 410" dur="1.2s" begin="0.4s" repeatCount="indefinite" />
-  </circle>
-  <circle r="3" fill="#FFFFFF">
-    <animateMotion path="M 450 350 L 450 410" dur="1.2s" begin="0.4s" repeatCount="indefinite" />
-  </circle>
+  <g>
+    <circle r="6" fill="#EC4899" filter="url(#glow-pink)">
+      <animateMotion path="M 450 350 L 450 410" dur="1.2s" begin="0.4s" repeatCount="indefinite" />
+    </circle>
+    <circle r="3" fill="#FFFFFF">
+      <animateMotion path="M 450 350 L 450 410" dur="1.2s" begin="0.4s" repeatCount="indefinite" />
+    </circle>
+  </g>
 
   <!-- Particle 5: SSE -> DB -->
-  <circle r="5" fill="#818CF8" filter="url(#glow-blue)">
-    <animateMotion path="M 590 350 L 590 380 L 725 380 L 725 410" dur="1.4s" begin="0.3s" repeatCount="indefinite" />
-  </circle>
-  <circle r="3" fill="#FFFFFF">
-    <animateMotion path="M 590 350 L 590 380 L 725 380 L 725 410" dur="1.4s" begin="0.3s" repeatCount="indefinite" />
-  </circle>
+  <g>
+    <circle r="6" fill="#818CF8" filter="url(#glow-blue)">
+      <animateMotion path="M 590 350 L 590 380 L 725 380 L 725 410" dur="1.4s" begin="0.3s" repeatCount="indefinite" />
+    </circle>
+    <circle r="3" fill="#FFFFFF">
+      <animateMotion path="M 590 350 L 590 380 L 725 380 L 725 410" dur="1.4s" begin="0.3s" repeatCount="indefinite" />
+    </circle>
+  </g>
 
   <!-- Outbound Nodes (Bottom Row) -->
   <!-- Bottom Node 1: KDS Station -->
