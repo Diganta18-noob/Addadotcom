@@ -165,25 +165,25 @@ Order Checkout ───────────────────► /api
 ```mermaid
 graph TB
     subgraph Customer["👤 Customer Experience (Browser)"]
-        A[Homepage] --> B[Menu & Cart]
-        B --> C[Checkout / Order]
-        C --> D[/track/:id — Live Tracker]
-        D --> E[/invoice/:number — e-Receipt]
+        A[Homepage] --> B["Menu & Cart"]
+        B --> C["Checkout / Order"]
+        C --> D["/track/:id — Live Tracker"]
+        D --> E["/invoice/:number — e-Receipt"]
     end
 
     subgraph Admin["🏢 Admin Portal (/admin)"]
-        F[Dashboard] --> G[KDS /admin/kitchen]
-        F --> H[Billing / POS]
-        F --> I[Tables Floor Plan]
-        F --> J[Analytics & Reports]
+        F[Dashboard] --> G["KDS /admin/kitchen"]
+        F --> H["Billing / POS"]
+        F --> I["Tables Floor Plan"]
+        F --> J["Analytics & Reports"]
     end
 
     subgraph API["⚡ Next.js API Routes"]
-        K[/api/orders]
-        L[/api/billing]
-        M[/api/sse — Event Bus Pub/Sub]
-        N[/api/reservations]
-        O[/api/menu]
+        K["/api/orders"]
+        L["/api/billing"]
+        M["/api/sse — Event Bus Pub/Sub"]
+        N["/api/reservations"]
+        O["/api/menu"]
     end
 
     subgraph DB["🗄 PostgreSQL — Prisma ORM"]
