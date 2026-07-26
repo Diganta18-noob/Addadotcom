@@ -141,6 +141,14 @@ export default function OrderPage() {
     }
   }, [orderType, fetchTables]);
 
+  React.useEffect(() => {
+    if (orderType === "DINE_IN" || orderType === "TAKEAWAY") {
+      setPaymentMethod("COUNTER");
+    } else if (orderType === "DELIVERY") {
+      setPaymentMethod("COD");
+    }
+  }, [orderType, setPaymentMethod]);
+
   const subtotal = getSubtotal();
   const taxes = getTaxes();
   const serviceCharge = getServiceCharge();
@@ -304,9 +312,24 @@ export default function OrderPage() {
             <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground">
               Order Placed! 🎉
             </h1>
-            <p className="text-muted-foreground text-sm">
-              Your kitchen has been notified and is getting started
-            </p>
+            {activeOrder?.type === "DINE_IN" ? (
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-sm">
+                  Your order is being prepared! Sit back and relax.
+                </p>
+                <p className="text-xs text-muted-foreground/80">
+                  Your bill will be presented at the table after your food is served.
+                </p>
+              </div>
+            ) : activeOrder?.type === "TAKEAWAY" ? (
+              <p className="text-muted-foreground text-sm">
+                Your order is being prepared for pickup!
+              </p>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                Your order is on its way!
+              </p>
+            )}
           </motion.div>
 
           {/* Order Identity Card */}
@@ -535,11 +558,17 @@ export default function OrderPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Numbered Step Progress Header Bar */}
         <div className="flex items-center justify-between gap-2 mb-8 bg-card border border-border p-3 sm:p-4 rounded-2xl shadow-xs">
-          {[
-            { n: 1, label: "1. Your Cart", desc: `${items.length} item${items.length > 1 ? "s" : ""}` },
-            { n: 2, label: "2. Order Details", desc: orderType === "DINE_IN" ? (tableNumber ? `Table ${tableNumber}` : "Dine-in") : orderType === "TAKEAWAY" ? "Takeaway" : "Delivery" },
-            { n: 3, label: "3. Payment", desc: "Pay & Place Order" },
-          ].map(({ n, label, desc }, idx) => {
+          {(orderType === "DINE_IN"
+            ? [
+                { n: 1, label: "1. Your Cart", desc: `${items.length} item${items.length > 1 ? "s" : ""}` },
+                { n: 2, label: "2. Confirm Order", desc: tableNumber ? `Table ${tableNumber}` : "Select table" },
+              ]
+            : [
+                { n: 1, label: "1. Your Cart", desc: `${items.length} item${items.length > 1 ? "s" : ""}` },
+                { n: 2, label: "2. Order Details", desc: orderType === "TAKEAWAY" ? "Takeaway" : "Delivery" },
+                { n: 3, label: "3. Payment", desc: "Pay & Place Order" },
+              ]
+          ).map(({ n, label, desc }, idx, arr) => {
             const isCompleted = currentStep > n;
             const isActive = currentStep === n;
 
@@ -581,7 +610,7 @@ export default function OrderPage() {
                   </div>
                 </button>
 
-                {idx < 2 && (
+                {idx < arr.length - 1 && (
                   <div
                     className={cn(
                       "flex-1 h-0.5 rounded-full transition-colors",
@@ -929,6 +958,20 @@ export default function OrderPage() {
                 <div className="p-6 rounded-2xl border border-border bg-card space-y-6 shadow-sm sticky top-24">
                   <h3 className="font-serif text-lg font-bold">Order Summary</h3>
 
+                  {orderType === "DINE_IN" && (
+                    <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">🍽️</span>
+                        <p className="text-xs font-bold text-amber-700 dark:text-amber-400">
+                          Pay After Your Meal
+                        </p>
+                      </div>
+                      <p className="text-[11px] text-amber-600/80 dark:text-amber-500/80 leading-relaxed">
+                        No payment needed now. Your bill will be presented at the table once your food is served. You can pay by cash, card, or UPI at the counter.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between text-muted-foreground">
                       <span>Order Type</span>
@@ -945,22 +988,33 @@ export default function OrderPage() {
                       <span className="font-bold text-foreground">{items.length} items</span>
                     </div>
                     <div className="flex justify-between pt-2 border-t border-border font-bold text-base">
-                      <span>Est. Total</span>
+                      <span>{orderType === "DINE_IN" ? "Est. Total (billed after meal)" : "Est. Total"}</span>
                       <span className="text-caramel">{formatCurrency(total)}</span>
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <button
-                      onClick={() => {
-                        if (validateStep2()) {
-                          setCurrentStep(3);
-                        }
-                      }}
-                      className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-caramel text-espresso rounded-xl font-bold text-base hover:bg-caramel-300 transition-all shadow-md active:scale-[0.98]"
-                    >
-                      Continue to Payment <ArrowRight className="w-5 h-5" />
-                    </button>
+                    {orderType === "DINE_IN" ? (
+                      <LoadingButton
+                        onClick={handlePlaceOrder}
+                        loading={loading}
+                        loadingText="Placing Order..."
+                        className="w-full px-6 py-4 bg-caramel text-espresso font-bold text-base rounded-xl hover:bg-caramel-300 transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
+                      >
+                        Place Order — Pay After Meal <ArrowRight className="w-5 h-5" />
+                      </LoadingButton>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          if (validateStep2()) {
+                            setCurrentStep(3);
+                          }
+                        }}
+                        className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-caramel text-espresso rounded-xl font-bold text-base hover:bg-caramel-300 transition-all shadow-md active:scale-[0.98]"
+                      >
+                        Continue to Payment <ArrowRight className="w-5 h-5" />
+                      </button>
+                    )}
 
                     <button
                       onClick={() => setCurrentStep(1)}
@@ -975,7 +1029,7 @@ export default function OrderPage() {
           )}
 
           {/* STEP 3: PAYMENT */}
-          {currentStep === 3 && (
+          {currentStep === 3 && orderType !== "DINE_IN" && (
             <motion.div
               key="step-3"
               initial={{ opacity: 0, x: 20 }}
@@ -991,14 +1045,17 @@ export default function OrderPage() {
                   <h2 className="font-serif text-lg font-bold flex items-center gap-2">
                     <CreditCard className="w-5 h-5 text-caramel" /> Select Payment Method
                   </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {[
-                      { value: "ONLINE" as const, label: "Pay Online / UPI", icon: CreditCard, sub: "Instant payment" },
-                      { value: "COUNTER" as const, label: "Pay at Counter", icon: Banknote, sub: "Pay cash/card later" },
-                      ...(orderType === "DELIVERY"
-                        ? [{ value: "COD" as const, label: "Cash on Delivery", icon: Banknote, sub: "Pay upon arrival" }]
-                        : []),
-                    ].map((method) => {
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {(orderType === "TAKEAWAY"
+                      ? [
+                          { value: "ONLINE" as const, label: "Pay Online / UPI", icon: CreditCard, sub: "Pay now, collect when ready" },
+                          { value: "COUNTER" as const, label: "Pay at Counter", icon: Banknote, sub: "Pay cash/card on pickup" },
+                        ]
+                      : [
+                          { value: "ONLINE" as const, label: "Pay Online / UPI", icon: CreditCard, sub: "Secure instant payment" },
+                          { value: "COD" as const, label: "Cash on Delivery", icon: Banknote, sub: "Pay upon arrival" },
+                        ]
+                    ).map((method) => {
                       const Icon = method.icon;
                       const isSelected = paymentMethod === method.value;
                       return (
