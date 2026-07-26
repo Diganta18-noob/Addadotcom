@@ -130,7 +130,7 @@ export function InvoiceModal({ orderId, onClose }: InvoiceModalProps) {
                 </button>
               </div>
             ) : invoice ? (
-              <InvoiceDocument invoice={invoice} />
+              <InvoiceDocument invoice={invoice} compact={true} />
             ) : null}
           </div>
 

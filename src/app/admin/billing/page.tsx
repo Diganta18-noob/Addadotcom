@@ -111,9 +111,10 @@ function AdminBillingContent() {
 
   // Receipt UI
   const [showReceipt, setShowReceipt] = useState(false);
+  const [paidOrderId, setPaidOrderId] = useState<string | null>(null);
 
   // Fetch initial data
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (preserveTableId?: string) => {
     setLoading(true);
     
     try {
@@ -122,7 +123,9 @@ function AdminBillingContent() {
       const tablesData = await tablesRes.json();
       if (tablesData.success && Array.isArray(tablesData.data)) {
         setTables(tablesData.data);
-        if (tableIdParam) {
+        if (preserveTableId) {
+          setSelectedTableId(preserveTableId);
+        } else if (tableIdParam) {
           setSelectedTableId(tableIdParam);
         } else {
           setSelectedTableId((prev) => prev || (tablesData.data.length > 0 ? tablesData.data[0].id : ""));
@@ -277,6 +280,8 @@ function AdminBillingContent() {
     if (newBalance <= 0) {
       // POST the full payment to database
       setLoading(true);
+      const capturedPaidOrderId = activeOrder.id;
+      const capturedPaidTableId = selectedTableId;
       try {
         const res = await fetch("/api/billing", {
           method: "POST",
@@ -305,8 +310,9 @@ function AdminBillingContent() {
         if (data.success) {
           setBillPaid(true);
           setShowReceipt(true);
+          setPaidOrderId(capturedPaidOrderId);
           toast.success("Bill paid in full and saved!");
-          fetchData(); // Refresh tables and orders
+          await fetchData(capturedPaidTableId); // Refresh tables and orders preserving selected table
         } else {
           toast.error("Failed to save bill transaction");
         }
@@ -589,7 +595,7 @@ function AdminBillingContent() {
         </div>
 
         {/* Right: Bill Summary */}
-        {billItems.length > 0 && (
+        {(billItems.length > 0 || billPaid) && (
           <div className="lg:col-span-2">
             <div className="sticky top-24 space-y-6">
               <div className="rounded-xl border border-border bg-card p-6 space-y-4">
@@ -716,27 +722,36 @@ function AdminBillingContent() {
                   </div>
                 ) : (
                   <div className="space-y-3 pt-3">
-                    <div className="flex items-center justify-center gap-2 text-green-600">
-                      <CheckCircle className="w-5 h-5" />
-                      <span className="font-semibold">Bill Paid</span>
+                    <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200">
+                      <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+                      <div>
+                        <p className="text-sm font-bold text-green-700 dark:text-green-400">Bill Paid Successfully</p>
+                        <p className="text-xs text-green-600 dark:text-green-500">{billNumber}</p>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setShowReceipt(true)}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-border rounded-xl text-sm font-medium hover:bg-muted transition-colors"
-                      >
-                        <Printer className="w-4 h-4" /> Print
-                      </button>
-                      <button
-                        onClick={() => {
-                          toast.success("Receipt PDF downloaded!");
-                          setShowReceipt(true);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-espresso text-cream rounded-xl text-sm font-medium hover:bg-espresso-500 transition-colors"
-                      >
-                        <Download className="w-4 h-4" /> PDF
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => {
+                        setPaidOrderId(paidOrderId || activeOrder?.id || null);
+                        setShowReceipt(true);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-caramel text-espresso rounded-xl font-semibold hover:bg-caramel-300 transition-all"
+                    >
+                      <Printer className="w-4 h-4" /> View & Print Receipt
+                    </button>
+                    <button
+                      onClick={() => {
+                        setBillPaid(false);
+                        setBillItems([]);
+                        setDiscounts([]);
+                        setPayments([]);
+                        setActiveOrder(null);
+                        setPaidOrderId(null);
+                        setBillNumber(generateBillNumber());
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-muted border border-border rounded-xl text-sm font-medium hover:bg-muted/80 transition-colors"
+                    >
+                      New Bill
+                    </button>
                   </div>
                 )}
               </div>
@@ -748,8 +763,11 @@ function AdminBillingContent() {
       {/* Premium Tax Invoice Modal */}
       {showReceipt && (
         <InvoiceModal
-          orderId={activeOrder?.id || null}
-          onClose={() => setShowReceipt(false)}
+          orderId={showReceipt ? paidOrderId || activeOrder?.id || null : null}
+          onClose={() => {
+            setShowReceipt(false);
+            setPaidOrderId(null);
+          }}
         />
       )}
     </div>

@@ -7,8 +7,8 @@ import { InvoiceData } from "./InvoiceDocument";
 
 const styles = StyleSheet.create({
   page: {
-    padding: 24,
-    fontSize: 9,
+    padding: 20,
+    fontSize: 8.5,
     fontFamily: "Helvetica",
     color: "#1F2937",
     backgroundColor: "#FFFFFF",
@@ -19,8 +19,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     borderBottomWidth: 1.5,
     borderBottomColor: "#D4A056",
-    paddingBottom: 10,
-    marginBottom: 12,
+    paddingBottom: 8,
+    marginBottom: 8,
   },
   brandTitle: {
     fontSize: 18,
@@ -66,8 +66,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E5E7EB",
     borderRadius: 6,
-    padding: 8,
-    marginBottom: 12,
+    padding: 6,
+    marginBottom: 8,
   },
   infoCol: {
     flex: 1,
@@ -90,15 +90,15 @@ const styles = StyleSheet.create({
   },
   table: {
     width: "100%",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   tableHeader: {
     flexDirection: "row",
     backgroundColor: "#F3F4F6",
     borderBottomWidth: 1,
     borderBottomColor: "#D1D5DB",
-    paddingVertical: 5,
-    paddingHorizontal: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 5,
   },
   tableHeaderCell: {
     fontSize: 7,
@@ -110,8 +110,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     borderBottomWidth: 1,
     borderBottomColor: "#F3F4F6",
-    paddingVertical: 5,
-    paddingHorizontal: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 5,
   },
   colNo: { width: 22 },
   colDesc: { flex: 1 },
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   totalsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   gstSummary: {
     width: "50%",
@@ -199,6 +199,9 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoiceData }) {
     amount: cgstTax.amount,
   };
 
+  const displayItems = (items || []).slice(0, 15);
+  const remainingCount = (items || []).length - displayItems.length;
+
   return (
     <Document title={`Invoice-${invoice.invoiceNumber}`}>
       <Page size="A4" style={styles.page}>
@@ -265,7 +268,7 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoiceData }) {
             <Text style={[styles.tableHeaderCell, styles.colTotal]}>Total</Text>
           </View>
 
-          {items.map((item, idx) => (
+          {displayItems.map((item, idx) => (
             <View key={idx} style={styles.tableRow}>
               <Text style={styles.colNo}>{idx + 1}</Text>
               <View style={styles.colDesc}>
@@ -279,6 +282,13 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoiceData }) {
               </Text>
             </View>
           ))}
+          {remainingCount > 0 && (
+            <View style={styles.tableRow}>
+              <Text style={[styles.colDesc, { color: "#6B7280", fontStyle: "italic", fontSize: 8 }]}>
+                + {remainingCount} more item{remainingCount > 1 ? "s" : ""} (see full invoice online)
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Totals Section (Prevent Page Split) */}
@@ -326,11 +336,12 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoiceData }) {
         </View>
 
         {/* Footer */}
-        <View minPresenceAhead={40} style={styles.footer}>
+        <View wrap={false} style={styles.footer}>
           <Text style={styles.footerTitle}>Thank You for Dining with Us!</Text>
           <Text style={styles.footerText}>
             Bills once printed cannot be modified. Visit us online at www.addadotcom.cafe
           </Text>
+          <Text style={styles.footerText}>Powered by AddaDotCom POS System</Text>
         </View>
       </Page>
     </Document>

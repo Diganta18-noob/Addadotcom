@@ -30,9 +30,10 @@ export interface InvoiceData {
 export interface InvoiceDocumentProps {
   invoice: InvoiceData;
   className?: string;
+  compact?: boolean;
 }
 
-export function InvoiceDocument({ invoice, className = "" }: InvoiceDocumentProps) {
+export function InvoiceDocument({ invoice, className = "", compact = false }: InvoiceDocumentProps) {
   const [origin, setOrigin] = useState("https://addadotcom.vercel.app");
 
   useEffect(() => {
@@ -53,7 +54,7 @@ export function InvoiceDocument({ invoice, className = "" }: InvoiceDocumentProp
   return (
     <div
       data-invoice-print="true"
-      className={`bg-white text-gray-900 font-sans p-6 rounded-2xl border border-gray-200 shadow-sm print:p-0 print:border-none print:shadow-none print:max-w-none print:w-full relative overflow-hidden space-y-6 ${className}`}
+      className={`bg-white text-gray-900 font-sans p-6 rounded-2xl border border-gray-200 shadow-sm print:p-0 print:border-none print:shadow-none print:max-w-none print:w-full relative overflow-hidden ${compact ? "space-y-3" : "space-y-6"} ${className}`}
     >
       {/* Subtle "PAID" Ink Watermark */}
       {isPaid && (
@@ -101,6 +102,7 @@ export function InvoiceDocument({ invoice, className = "" }: InvoiceDocumentProp
           financials={invoice.financials}
           paymentMethod={invoice.paymentMethod}
           paymentStatus={invoice.paymentStatus}
+          compact={compact}
         />
       </div>
 
@@ -110,6 +112,7 @@ export function InvoiceDocument({ invoice, className = "" }: InvoiceDocumentProp
           loyaltyPoints={invoice.loyaltyPoints || 25}
           invoiceNumber={invoice.invoiceNumber}
           invoiceBaseUrl={origin}
+          compact={compact}
         />
       </div>
 

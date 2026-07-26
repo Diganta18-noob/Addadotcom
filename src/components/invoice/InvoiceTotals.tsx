@@ -30,12 +30,14 @@ export interface InvoiceTotalsProps {
   financials: Financials;
   paymentMethod?: string;
   paymentStatus?: string;
+  compact?: boolean;
 }
 
 export function InvoiceTotals({
   financials,
   paymentMethod = "CASH",
   paymentStatus = "PAID",
+  compact = false,
 }: InvoiceTotalsProps) {
   const {
     subtotal = 0,
@@ -146,35 +148,37 @@ export function InvoiceTotals({
       </div>
 
       {/* Statutory GST Breakdown Table */}
-      <div className="border-t border-border/60 pt-3">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-          GST Statutory Breakdown (SAC: 996331 — Food & Beverage Services)
-        </p>
-        <div className="overflow-x-auto rounded-lg border border-border/60">
-          <table className="w-full text-[10px] text-left">
-            <thead className="bg-muted/40 font-semibold text-muted-foreground">
-              <tr>
-                <th className="py-1.5 px-2.5">HSN/SAC</th>
-                <th className="py-1.5 px-2.5 text-right">Taxable Amount</th>
-                <th className="py-1.5 px-2.5 text-right">CGST ({cgstTax.rate}%)</th>
-                <th className="py-1.5 px-2.5 text-right">SGST ({sgstTax.rate}%)</th>
-                <th className="py-1.5 px-2.5 text-right">Total Tax</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/40 font-mono">
-              <tr>
-                <td className="py-1.5 px-2.5 font-sans font-medium text-foreground">996331</td>
-                <td className="py-1.5 px-2.5 text-right">{formatCurrency(subtotal - totalDiscount + serviceCharge)}</td>
-                <td className="py-1.5 px-2.5 text-right">{formatCurrency(cgstTax.amount)}</td>
-                <td className="py-1.5 px-2.5 text-right">{formatCurrency(sgstTax.amount)}</td>
-                <td className="py-1.5 px-2.5 text-right font-bold text-foreground">
-                  {formatCurrency(cgstTax.amount + sgstTax.amount)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      {!compact && (
+        <div className="border-t border-border/60 pt-3">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+            GST Statutory Breakdown (SAC: 996331 — Food & Beverage Services)
+          </p>
+          <div className="overflow-x-auto rounded-lg border border-border/60">
+            <table className="w-full text-[10px] text-left">
+              <thead className="bg-muted/40 font-semibold text-muted-foreground">
+                <tr>
+                  <th className="py-1.5 px-2.5">HSN/SAC</th>
+                  <th className="py-1.5 px-2.5 text-right">Taxable Amount</th>
+                  <th className="py-1.5 px-2.5 text-right">CGST ({cgstTax.rate}%)</th>
+                  <th className="py-1.5 px-2.5 text-right">SGST ({sgstTax.rate}%)</th>
+                  <th className="py-1.5 px-2.5 text-right">Total Tax</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40 font-mono">
+                <tr>
+                  <td className="py-1.5 px-2.5 font-sans font-medium text-foreground">996331</td>
+                  <td className="py-1.5 px-2.5 text-right">{formatCurrency(subtotal - totalDiscount + serviceCharge)}</td>
+                  <td className="py-1.5 px-2.5 text-right">{formatCurrency(cgstTax.amount)}</td>
+                  <td className="py-1.5 px-2.5 text-right">{formatCurrency(sgstTax.amount)}</td>
+                  <td className="py-1.5 px-2.5 text-right font-bold text-foreground">
+                    {formatCurrency(cgstTax.amount + sgstTax.amount)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
