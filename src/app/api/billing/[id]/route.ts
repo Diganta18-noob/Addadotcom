@@ -1,8 +1,8 @@
 import prisma from "@/lib/prisma";
-import { apiHandler, ApiError } from "@/lib/api-helpers";
+import { protectedApiHandler, ApiError } from "@/lib/api-helpers";
 import { updateBillSchema } from "@/lib/validations";
 
-export const GET = apiHandler(async (request, { params }) => {
+export const GET = protectedApiHandler(async (request, { params }) => {
   const bill = await prisma.bill.findUnique({
     where: { id: params.id },
     include: { order: { include: { table: true } }, cashier: true },
@@ -22,34 +22,38 @@ export const GET = apiHandler(async (request, { params }) => {
   return { data: bill };
 });
 
-export const PUT = apiHandler(async (request, { params }) => {
+export const PUT = protectedApiHandler(async (request, { params }) => {
   const body = await request.json();
   const data = updateBillSchema.parse(body);
 
-  const bill = await prisma.bill.update({
-    where: { id: params.id },
-    data: {
-      ...(data.status && { status: data.status }),
-      ...(data.payments && { payments: data.payments }),
-      ...(data.total !== undefined && { total: data.total }),
-      ...(data.roundingAdj !== undefined && { roundingAdj: data.roundingAdj }),
-      ...(data.refundReason !== undefined && { refundReason: data.refundReason }),
-      ...(data.cashierId !== undefined && { cashierId: data.cashierId }),
-    },
-    include: { order: true },
-  });
+  const bill = await prisma.$transaction(async (tx) => {
+    const updatedBill = await tx.bill.update({
+      where: { id: params.id },
+      data: {
+        ...(data.status && { status: data.status }),
+        ...(data.payments && { payments: data.payments }),
+        ...(data.total !== undefined && { total: data.total }),
+        ...(data.roundingAdj !== undefined && { roundingAdj: data.roundingAdj }),
+        ...(data.refundReason !== undefined && { refundReason: data.refundReason }),
+        ...(data.cashierId !== undefined && { cashierId: data.cashierId }),
+      },
+      include: { order: true },
+    });
 
-  // Free table when bill is paid
-  if (data.status === "PAID" && bill.order?.tableId) {
-    await prisma.cafeTable.update({
-      where: { id: bill.order.tableId },
-      data: { status: "FREE" },
-    });
-    await prisma.order.update({
-      where: { id: bill.orderId },
-      data: { status: "COMPLETED" },
-    });
-  }
+    // Free table when bill is paid
+    if (data.status === "PAID" && updatedBill.order?.tableId) {
+      await tx.cafeTable.update({
+        where: { id: updatedBill.order.tableId },
+        data: { status: "FREE" },
+      });
+      await tx.order.update({
+        where: { id: updatedBill.orderId },
+        data: { status: "COMPLETED" },
+      });
+    }
+
+    return updatedBill;
+  });
 
   return { data: bill };
 });

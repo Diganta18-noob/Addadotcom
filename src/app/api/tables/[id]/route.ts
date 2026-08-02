@@ -1,10 +1,10 @@
 import prisma from "@/lib/prisma";
-import { apiHandler } from "@/lib/api-helpers";
+import { protectedApiHandler } from "@/lib/api-helpers";
 import { updateTableSchema } from "@/lib/validations";
 
 export const dynamic = "force-dynamic";
 
-export const PUT = apiHandler(async (request, context: any) => {
+export const PUT = protectedApiHandler(async (request, context: any) => {
   const params = await context.params;
   const id = params.id;
 
@@ -35,7 +35,7 @@ export const PUT = apiHandler(async (request, context: any) => {
   return { data: table };
 });
 
-export const DELETE = apiHandler(async (request, context: any) => {
+export const DELETE = protectedApiHandler(async (request, context: any) => {
   const params = await context.params;
   const id = params.id;
 

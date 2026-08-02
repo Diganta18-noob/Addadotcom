@@ -6,7 +6,11 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (pathname.startsWith("/admin")) {
-    const secret = process.env.NEXTAUTH_SECRET || "addadotcom-secret-key-2026-super-secure-jwt";
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret) {
+      console.error("NEXTAUTH_SECRET is not configured in environment");
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
 
     // Try retrieving token with default, secureCookie=true, and secureCookie=false for Vercel proxy compatibility
     let token = await getToken({ req, secret });

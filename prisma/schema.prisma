@@ -97,6 +97,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([role])
   @@map("users")
 }
 
@@ -252,6 +253,8 @@ model Reservation {
   updatedAt DateTime @updatedAt
 
   @@index([status, date])
+  @@index([guestPhone])
+  @@index([guestEmail])
   @@map("reservations")
 }
 
@@ -286,6 +289,8 @@ model Order {
   @@index([createdAt])
   @@index([userId, status])
   @@index([status, createdAt])
+  @@index([tableId, status])
+  @@index([type, status, createdAt])
   @@map("orders")
 }
 
@@ -324,6 +329,7 @@ model Bill {
   updatedAt DateTime @updatedAt
 
   @@index([status, createdAt])
+  @@index([billNumber])
   @@map("bills")
 }
 
@@ -341,6 +347,7 @@ model InventoryItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([name])
   @@map("inventory_items")
 }
 

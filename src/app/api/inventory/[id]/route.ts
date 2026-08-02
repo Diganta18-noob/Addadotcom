@@ -1,11 +1,11 @@
 import prisma from "@/lib/prisma";
-import { apiHandler, ApiError } from "@/lib/api-helpers";
+import { protectedApiHandler, ApiError } from "@/lib/api-helpers";
 import { adjustInventorySchema } from "@/lib/validations";
 import { AutomationEngine } from "@/lib/automation";
 
 export const dynamic = "force-dynamic";
 
-export const PUT = apiHandler(async (request, context: any) => {
+export const PUT = protectedApiHandler(async (request, context: any) => {
   const params = await context.params;
   const id = params.id;
   const body = await request.json();
@@ -19,22 +19,25 @@ export const PUT = apiHandler(async (request, context: any) => {
     throw new ApiError(404, "NOT_FOUND", "Inventory item not found");
   }
 
-  const updated = await prisma.inventoryItem.update({
-    where: { id },
-    data: {
-      quantity: {
-        increment: data.change,
+  const updated = await prisma.$transaction(async (tx) => {
+    const item = await tx.inventoryItem.update({
+      where: { id },
+      data: {
+        quantity: {
+          increment: data.change,
+        },
       },
-    },
-  });
+    });
 
-  // Log the change
-  await prisma.stockLog.create({
-    data: {
-      inventoryItemId: id,
-      change: data.change,
-      reason: data.reason || "Manual adjustment",
-    },
+    await tx.stockLog.create({
+      data: {
+        inventoryItemId: id,
+        change: data.change,
+        reason: data.reason || "Manual adjustment",
+      },
+    });
+
+    return item;
   });
 
   // Fire Automation Engine event if stock is low
@@ -54,7 +57,7 @@ export const PUT = apiHandler(async (request, context: any) => {
   return { data: updated };
 });
 
-export const DELETE = apiHandler(async (request, context: any) => {
+export const DELETE = protectedApiHandler(async (request, context: any) => {
   const params = await context.params;
   const id = params.id;
 

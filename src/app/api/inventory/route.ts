@@ -1,45 +1,43 @@
 import prisma from "@/lib/prisma";
-import { apiHandler } from "@/lib/api-helpers";
+import { protectedApiHandler } from "@/lib/api-helpers";
 import { createInventorySchema } from "@/lib/validations";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export const GET = apiHandler(async () => {
+export const GET = protectedApiHandler(async () => {
   const items = await prisma.inventoryItem.findMany({
     orderBy: { name: "asc" },
-    include: {
-      stockLogs: {
-        orderBy: { createdAt: "desc" },
-        take: 20,
-      },
-    },
   });
   return { data: items };
 });
 
-export const POST = apiHandler(async (request) => {
+export const POST = protectedApiHandler(async (request) => {
   const body = await request.json();
   const data = createInventorySchema.parse(body);
 
-  const item = await prisma.inventoryItem.create({
-    data: {
-      name: data.name,
-      unit: data.unit,
-      quantity: data.quantity,
-      lowStockThreshold: data.lowStockThreshold,
-    },
-  });
-
-  if (data.quantity > 0) {
-    await prisma.stockLog.create({
+  const item = await prisma.$transaction(async (tx) => {
+    const createdItem = await tx.inventoryItem.create({
       data: {
-        inventoryItemId: item.id,
-        change: data.quantity,
-        reason: "Initial stock registration",
+        name: data.name,
+        unit: data.unit,
+        quantity: data.quantity,
+        lowStockThreshold: data.lowStockThreshold,
       },
     });
-  }
+
+    if (data.quantity > 0) {
+      await tx.stockLog.create({
+        data: {
+          inventoryItemId: createdItem.id,
+          change: data.quantity,
+          reason: "Initial stock registration",
+        },
+      });
+    }
+
+    return createdItem;
+  });
 
   return { data: item, status: 201 };
 });

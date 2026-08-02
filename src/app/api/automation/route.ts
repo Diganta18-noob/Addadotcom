@@ -1,11 +1,11 @@
 import prisma from "@/lib/prisma";
-import { apiHandler, ApiError } from "@/lib/api-helpers";
+import { protectedApiHandler, ApiError } from "@/lib/api-helpers";
 import { CacheManager } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/automation — list all automation workflows
-export const GET = apiHandler(async () => {
+export const GET = protectedApiHandler(async () => {
   const workflows = await prisma.automationWorkflow.findMany({
     orderBy: { createdAt: "desc" },
     include: {
@@ -19,7 +19,7 @@ export const GET = apiHandler(async () => {
 });
 
 // POST /api/automation — create new automation workflow
-export const POST = apiHandler(async (request) => {
+export const POST = protectedApiHandler(async (request) => {
   const body = await request.json();
   const { name, description, triggerEvent, conditions, actions, dedupeKey, dedupeWindow, maxRetries, retryDelay } = body;
 

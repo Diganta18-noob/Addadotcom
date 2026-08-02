@@ -1,11 +1,11 @@
 import prisma from "@/lib/prisma";
-import { apiHandler, ApiError } from "@/lib/api-helpers";
+import { protectedApiHandler, ApiError } from "@/lib/api-helpers";
 import { CacheManager } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
 // PUT /api/automation/[id] — update or toggle automation workflow
-export const PUT = apiHandler(async (request, context: any) => {
+export const PUT = protectedApiHandler(async (request, context: any) => {
   const params = await context.params;
   const id = params.id;
   const body = await request.json();
@@ -43,7 +43,7 @@ export const PUT = apiHandler(async (request, context: any) => {
 });
 
 // DELETE /api/automation/[id] — delete automation workflow
-export const DELETE = apiHandler(async (request, context: any) => {
+export const DELETE = protectedApiHandler(async (request, context: any) => {
   const params = await context.params;
   const id = params.id;
 

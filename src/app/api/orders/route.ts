@@ -72,30 +72,33 @@ export const POST = apiHandler(async (request) => {
 
   const orderNumber = generateOrderNumber();
 
-  const order = await prisma.order.create({
-    data: {
-      orderNumber,
-      userId: data.userId || null,
-      type: data.type,
-      tableId: resolvedTableId,
-      reservationId: data.reservationId || null,
-      items: data.items,
-      notes: data.notes || null,
-      deliveryAddress: data.deliveryAddress || null,
-      deliveryFee: data.deliveryFee || 0,
-      pickupTime: data.pickupTime ? new Date(data.pickupTime) : null,
-      status: "PLACED",
-    },
-    include: { table: true },
-  });
-
-  // If dine-in and table resolved, mark table OCCUPIED
-  if (data.type === "DINE_IN" && resolvedTableId) {
-    await prisma.cafeTable.update({
-      where: { id: resolvedTableId },
-      data: { status: "OCCUPIED" },
+  const order = await prisma.$transaction(async (tx) => {
+    const createdOrder = await tx.order.create({
+      data: {
+        orderNumber,
+        userId: data.userId || null,
+        type: data.type,
+        tableId: resolvedTableId,
+        reservationId: data.reservationId || null,
+        items: data.items,
+        notes: data.notes || null,
+        deliveryAddress: data.deliveryAddress || null,
+        deliveryFee: data.deliveryFee || 0,
+        pickupTime: data.pickupTime ? new Date(data.pickupTime) : null,
+        status: "PLACED",
+      },
+      include: { table: true },
     });
-  }
+
+    if (data.type === "DINE_IN" && resolvedTableId) {
+      await tx.cafeTable.update({
+        where: { id: resolvedTableId },
+        data: { status: "OCCUPIED" },
+      });
+    }
+
+    return createdOrder;
+  });
 
   // Broadcast real-time SSE event
   try {

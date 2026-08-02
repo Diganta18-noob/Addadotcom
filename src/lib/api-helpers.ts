@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import logger from "@/lib/logger";
 
 // ─── Standard API Response Shape ────────────────────────────────
 
@@ -25,8 +28,6 @@ export class ApiError extends Error {
 }
 
 // ─── API Handler Wrapper ────────────────────────────────────────
-// Wraps route handlers with standard JSON response formatting
-// and centralized error handling (Zod, ApiError, generic errors).
 
 type HandlerResult = { data: any; status?: number };
 type RouteContext = { params: Record<string, string> };
@@ -37,8 +38,18 @@ type HandlerFn = (
 
 export function apiHandler(handler: HandlerFn) {
   return async (request: NextRequest, context: any) => {
+    const startTime = Date.now();
+    const requestId = crypto.randomUUID().slice(0, 8);
+    const pathname = new URL(request.url).pathname;
+
+    logger.info({
+      msg: "API Request",
+      requestId,
+      method: request.method,
+      path: pathname,
+    });
+
     try {
-      // Next.js 14 passes params as a promise in some versions
       const resolvedParams = context?.params
         ? typeof context.params.then === "function"
           ? await context.params
@@ -46,15 +57,31 @@ export function apiHandler(handler: HandlerFn) {
         : {};
 
       const result = await handler(request, { params: resolvedParams });
+      const status = result?.status || 200;
+
+      logger.info({
+        msg: "API Response",
+        requestId,
+        status,
+        durationMs: Date.now() - startTime,
+      });
 
       return NextResponse.json(
         { success: true, data: result.data },
-        { status: result.status || 200 }
+        { status }
       );
     } catch (error: unknown) {
-      console.error("API Error:", error);
+      const durationMs = Date.now() - startTime;
 
       if (error instanceof ApiError) {
+        logger.warn({
+          msg: "API Handled Error",
+          requestId,
+          status: error.statusCode,
+          code: error.code,
+          error: error.message,
+          durationMs,
+        });
         return NextResponse.json(
           { success: false, message: error.message, code: error.code },
           { status: error.statusCode }
@@ -70,11 +97,27 @@ export function apiHandler(handler: HandlerFn) {
           fieldErrors[path].push(err.message);
         });
 
+        logger.warn({
+          msg: "API Validation Error",
+          requestId,
+          status: 400,
+          errors: fieldErrors,
+          durationMs,
+        });
+
         return NextResponse.json(
           { success: false, message: "Validation Error", errors: fieldErrors },
           { status: 400 }
         );
       }
+
+      logger.error({
+        msg: "API Unhandled Error",
+        requestId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        durationMs,
+      });
 
       if (error instanceof Error) {
         return NextResponse.json(
@@ -89,4 +132,19 @@ export function apiHandler(handler: HandlerFn) {
       );
     }
   };
+}
+
+export function protectedApiHandler(
+  handler: HandlerFn,
+  allowedRoles: string[] = ["ADMIN", "MANAGER", "STAFF"]
+) {
+  return apiHandler(async (request, context) => {
+    const session = await getServerSession(authOptions);
+    const role = (session?.user as any)?.role?.toUpperCase();
+
+    if (!session || !allowedRoles.map((r) => r.toUpperCase()).includes(role)) {
+      throw new ApiError(401, "UNAUTHORIZED", "Authentication required to perform this action");
+    }
+    return handler(request, context);
+  });
 }

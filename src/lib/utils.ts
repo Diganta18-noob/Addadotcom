@@ -40,19 +40,20 @@ export function formatDateTime(date: Date | string): string {
 export function generateOrderNumber(): string {
   const now = new Date();
   const datePart = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
-  const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const randomPart = crypto.randomUUID().replace(/-/g, "").substring(0, 8).toUpperCase();
   return `ORD-${datePart}-${randomPart}`;
 }
 
 export function generateBillNumber(): string {
   const now = new Date();
   const datePart = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
-  const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const randomPart = crypto.randomUUID().replace(/-/g, "").substring(0, 8).toUpperCase();
   return `BILL-${datePart}-${randomPart}`;
 }
 
 export function generateBookingCode(): string {
-  return `BK-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const randomPart = crypto.randomUUID().replace(/-/g, "").substring(0, 8).toUpperCase();
+  return `BK-${randomPart}`;
 }
 
 export function slugify(text: string): string {

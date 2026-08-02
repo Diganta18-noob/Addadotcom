@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { apiHandler, ApiError } from "@/lib/api-helpers";
+import { apiHandler, protectedApiHandler, ApiError } from "@/lib/api-helpers";
 import { updateOrderSchema } from "@/lib/validations";
 import { AutomationEngine } from "@/lib/automation";
 
@@ -29,7 +29,7 @@ export const GET = apiHandler(async (request, context: any) => {
   return { data: order };
 });
 
-export const PUT = apiHandler(async (request, context: any) => {
+export const PUT = protectedApiHandler(async (request, context: any) => {
   const params = await context.params;
   const id = params.id;
 
@@ -44,46 +44,48 @@ export const PUT = apiHandler(async (request, context: any) => {
     throw new ApiError(404, "NOT_FOUND", "Order not found");
   }
 
-  const order = await prisma.order.update({
-    where: { id: existing.id },
-    data: {
-      ...(data.status && { status: data.status }),
-      ...(data.notes !== undefined && { notes: data.notes }),
-      ...(data.items && { items: data.items }),
-    },
-    include: { bill: true, table: true, user: true },
+  const order = await prisma.$transaction(async (tx) => {
+    const updatedOrder = await tx.order.update({
+      where: { id: existing!.id },
+      data: {
+        ...(data.status && { status: data.status }),
+        ...(data.notes !== undefined && { notes: data.notes }),
+        ...(data.items && { items: data.items }),
+      },
+      include: { bill: true, table: true, user: true },
+    });
+
+    if (updatedOrder.tableId && updatedOrder.type === "DINE_IN") {
+      if (data.status === "COMPLETED" || data.status === "CANCELLED") {
+        await tx.cafeTable.update({
+          where: { id: updatedOrder.tableId },
+          data: { status: "NEEDS_CLEANING" },
+        });
+      } else if (data.status === "SERVED") {
+        await tx.cafeTable.update({
+          where: { id: updatedOrder.tableId },
+          data: { status: "BILL_REQUESTED" },
+        });
+      }
+    }
+
+    if (data.status === "COMPLETED" && existing!.status !== "COMPLETED" && updatedOrder.userId) {
+      const items = typeof updatedOrder.items === "string" ? JSON.parse(updatedOrder.items) : updatedOrder.items;
+      const totalAmount = Array.isArray(items)
+        ? items.reduce((sum: number, i: any) => sum + (i.totalPrice || (i.unitPrice * (i.qty || 1)) || 0), 0)
+        : 0;
+      const earnedPoints = Math.floor(totalAmount / 10);
+
+      if (earnedPoints > 0) {
+        await tx.user.update({
+          where: { id: updatedOrder.userId },
+          data: { loyaltyPoints: { increment: earnedPoints } },
+        });
+      }
+    }
+
+    return updatedOrder;
   });
-
-  // Update table status based on order status
-  if (order.tableId && order.type === "DINE_IN") {
-    if (data.status === "COMPLETED" || data.status === "CANCELLED") {
-      await prisma.cafeTable.update({
-        where: { id: order.tableId },
-        data: { status: "NEEDS_CLEANING" },
-      });
-    } else if (data.status === "SERVED") {
-      await prisma.cafeTable.update({
-        where: { id: order.tableId },
-        data: { status: "BILL_REQUESTED" },
-      });
-    }
-  }
-
-  // Award Loyalty Points if status changed to COMPLETED and user is attached
-  if (data.status === "COMPLETED" && existing.status !== "COMPLETED" && order.userId) {
-    const items = typeof order.items === "string" ? JSON.parse(order.items) : order.items;
-    const totalAmount = Array.isArray(items)
-      ? items.reduce((sum: number, i: any) => sum + (i.totalPrice || (i.unitPrice * (i.qty || 1)) || 0), 0)
-      : 0;
-    const earnedPoints = Math.floor(totalAmount / 10); // 1 point per ₹10 spent
-
-    if (earnedPoints > 0) {
-      await prisma.user.update({
-        where: { id: order.userId },
-        data: { loyaltyPoints: { increment: earnedPoints } },
-      });
-    }
-  }
 
   // Broadcast SSE event
   try {

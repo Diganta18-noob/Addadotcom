@@ -1,43 +1,59 @@
 import prisma from "@/lib/prisma";
-import { apiHandler } from "@/lib/api-helpers";
+import { protectedApiHandler } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export const GET = apiHandler(async () => {
+export const GET = protectedApiHandler(async () => {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
   const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
   const startOfWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  startOfWeek.setHours(0, 0, 0, 0);
+
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfYear = new Date(now.getFullYear(), 0, 1);
 
-  // Aggregations
+  // Parallel aggregated database queries
   const [
-    todayBills,
-    weekBills,
-    monthBills,
-    yearBills,
+    todayAggregate,
+    weekAggregate,
+    monthAggregate,
+    yearAggregate,
     todayOrders,
     totalOrdersAllTime,
     todayReservations,
     todayOrdersData,
+    revenueByDayRaw,
   ] = await Promise.all([
-    prisma.bill.findMany({ where: { createdAt: { gte: today, lte: endOfDay }, status: "PAID" } }),
-    prisma.bill.findMany({ where: { createdAt: { gte: startOfWeek }, status: "PAID" } }),
-    prisma.bill.findMany({ where: { createdAt: { gte: startOfMonth }, status: "PAID" } }),
-    prisma.bill.findMany({ where: { createdAt: { gte: startOfYear }, status: "PAID" } }),
+    prisma.bill.aggregate({ where: { createdAt: { gte: today, lte: endOfDay }, status: "PAID" }, _sum: { total: true } }),
+    prisma.bill.aggregate({ where: { createdAt: { gte: startOfWeek }, status: "PAID" }, _sum: { total: true } }),
+    prisma.bill.aggregate({ where: { createdAt: { gte: startOfMonth }, status: "PAID" }, _sum: { total: true } }),
+    prisma.bill.aggregate({ where: { createdAt: { gte: startOfYear }, status: "PAID" }, _sum: { total: true } }),
     prisma.order.count({ where: { createdAt: { gte: today, lte: endOfDay } } }),
     prisma.order.count(),
     prisma.reservation.count({ where: { date: { gte: today, lte: endOfDay } } }),
-    prisma.order.findMany({ where: { createdAt: { gte: today, lte: endOfDay }, status: { not: "CANCELLED" } } }),
+    prisma.order.findMany({
+      where: { createdAt: { gte: today, lte: endOfDay }, status: { not: "CANCELLED" } },
+      select: { items: true },
+    }),
+    prisma.$queryRaw<{ date: Date; revenue: number }[]>`
+      SELECT
+        DATE_TRUNC('day', "createdAt") as date,
+        SUM(total)::float as revenue
+      FROM bills
+      WHERE "createdAt" >= ${startOfWeek}
+        AND status = 'PAID'
+      GROUP BY DATE_TRUNC('day', "createdAt")
+      ORDER BY date ASC
+    `,
   ]);
 
-  const todayRevenue = todayBills.reduce((sum, b) => sum + b.total, 0);
-  const weeklyRevenue = weekBills.reduce((sum, b) => sum + b.total, 0);
-  const monthlyRevenue = monthBills.reduce((sum, b) => sum + b.total, 0);
-  const yearlyRevenue = yearBills.reduce((sum, b) => sum + b.total, 0);
+  const todayRevenue = todayAggregate._sum.total || 0;
+  const weeklyRevenue = weekAggregate._sum.total || 0;
+  const monthlyRevenue = monthAggregate._sum.total || 0;
+  const yearlyRevenue = yearAggregate._sum.total || 0;
 
   const avgOrderValue = todayOrders > 0 ? todayRevenue / todayOrders : 0;
 
@@ -61,23 +77,22 @@ export const GET = apiHandler(async () => {
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-  // Revenue by day (last 7 days)
-  const revenueByDay: { date: string; revenue: number }[] = [];
+  // Format revenueByDay (last 7 days guaranteed filled)
   const dateOptions: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+  const revenueMap = new Map<string, number>();
+  revenueByDayRaw.forEach((row) => {
+    const dateKey = new Date(row.date).toLocaleDateString("en-US", dateOptions);
+    revenueMap.set(dateKey, Number(row.revenue || 0));
+  });
+
+  const revenueByDay: { date: string; revenue: number }[] = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    d.setHours(0, 0, 0, 0);
-    const dEnd = new Date(d);
-    dEnd.setHours(23, 59, 59, 999);
-
-    const bills = await prisma.bill.findMany({
-      where: { createdAt: { gte: d, lte: dEnd }, status: "PAID" },
-    });
-
+    const label = d.toLocaleDateString("en-US", dateOptions);
     revenueByDay.push({
-      date: d.toLocaleDateString("en-US", dateOptions),
-      revenue: bills.reduce((sum, b) => sum + b.total, 0),
+      date: label,
+      revenue: revenueMap.get(label) || 0,
     });
   }
 

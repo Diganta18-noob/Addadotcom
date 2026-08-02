@@ -23,13 +23,13 @@ export const createOrderSchema = z.object({
   deliveryFee: z.number().min(0).default(0),
   pickupTime: z.string().optional().nullable(),
   notes: z.string().max(500, "Notes cannot exceed 500 characters").optional().nullable(),
-  items: z.any(),
+  items: z.array(orderItemSchema).min(1, "Order must have at least one item"),
 });
 
 export const updateOrderSchema = z.object({
   status: z.enum(["PLACED", "ACCEPTED", "PREPARING", "READY", "SERVED", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELLED"]).optional(),
   notes: z.string().max(500).optional(),
-  items: z.any().optional(),
+  items: z.array(orderItemSchema).optional(),
 });
 
 // ─── Reservation Validation Schemas ────────────────────────────────────────

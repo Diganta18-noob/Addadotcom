@@ -1,10 +1,10 @@
 import prisma from "@/lib/prisma";
-import { apiHandler } from "@/lib/api-helpers";
+import { protectedApiHandler } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export const GET = apiHandler(async (request) => {
+export const GET = protectedApiHandler(async (request) => {
   const { searchParams } = new URL(request.url);
   const range = searchParams.get("range") || "week"; // today, week, month, custom
   const startStr = searchParams.get("start");

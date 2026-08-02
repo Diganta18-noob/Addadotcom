@@ -5,8 +5,13 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 import * as bcrypt from "bcryptjs";
 
+const secret = process.env.NEXTAUTH_SECRET;
+if (!secret && process.env.NODE_ENV === "production") {
+  throw new Error("NEXTAUTH_SECRET environment variable is required in production");
+}
+
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET || "addadotcom-secret-key-2026-super-secure-jwt",
+  secret: secret || process.env.NEXTAUTH_SECRET,
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",
@@ -53,15 +58,20 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           role: user.role,
+          loyaltyPoints: user.loyaltyPoints || 0,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.role = (user as any).role;
         token.id = user.id;
+        token.loyaltyPoints = (user as any).loyaltyPoints || 0;
+      }
+      if (trigger === "update" && session?.loyaltyPoints !== undefined) {
+        token.loyaltyPoints = session.loyaltyPoints;
       }
       return token;
     },
@@ -69,15 +79,7 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         (session.user as any).role = token.role;
         (session.user as any).id = token.id;
-        try {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: token.id as string },
-            select: { loyaltyPoints: true },
-          });
-          (session.user as any).loyaltyPoints = dbUser?.loyaltyPoints || 0;
-        } catch {
-          (session.user as any).loyaltyPoints = 0;
-        }
+        (session.user as any).loyaltyPoints = token.loyaltyPoints || 0;
       }
       return session;
     },

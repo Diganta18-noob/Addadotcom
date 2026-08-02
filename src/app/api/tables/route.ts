@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { apiHandler } from "@/lib/api-helpers";
+import { apiHandler, protectedApiHandler } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,7 +11,7 @@ export const GET = apiHandler(async () => {
   return { data: tables };
 });
 
-export const POST = apiHandler(async (request) => {
+export const POST = protectedApiHandler(async (request) => {
   const body = await request.json();
   const table = await prisma.cafeTable.create({
     data: {
