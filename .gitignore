@@ -37,7 +37,9 @@ yarn-error.log*
 .env*
 
 # vercel
-.vercel
+# local prompts log
+PROMPTS.md
+docs/PROMPTS.md
 
 # typescript
 *.tsbuildinfo
