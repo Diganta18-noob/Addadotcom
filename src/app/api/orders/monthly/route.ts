@@ -60,7 +60,14 @@ export const GET = apiHandler(async (request) => {
     const billTotal = order.bill?.status === "PAID" ? order.bill.total : 0;
     monthsData[monthIdx].revenue += billTotal;
 
-    const items = typeof order.items === "string" ? JSON.parse(order.items) : order.items;
+    let items = order.items;
+    if (typeof items === "string") {
+      try {
+        items = JSON.parse(items);
+      } catch {
+        items = [];
+      }
+    }
     if (Array.isArray(items)) {
       items.forEach((item) => {
         const name = item.menuItemName || item.menuItemId || "Item";
