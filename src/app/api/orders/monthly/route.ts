@@ -69,7 +69,8 @@ export const GET = apiHandler(async (request) => {
       }
     }
     if (Array.isArray(items)) {
-      items.forEach((item) => {
+      (items as any[]).forEach((item: any) => {
+        if (!item) return;
         const name = item.menuItemName || item.menuItemId || "Item";
         const qty = item.qty || 1;
         itemCountsPerMonth[monthIdx][name] = (itemCountsPerMonth[monthIdx][name] || 0) + qty;

@@ -92,9 +92,9 @@ export const GET = apiHandler(async (request) => {
   const completedOrdersCount =
     orders.filter(
       (o) =>
-        o.status === "COMPLETED" ||
-        o.status === "DELIVERED" ||
-        o.status === "SERVED"
+        o.status === "SERVED" ||
+        (o.status as string) === "COMPLETED" ||
+        (o.status as string) === "DELIVERED"
     ).length || paidBills.length;
   const cancelledCount = orders.filter((o) => o.status === "CANCELLED").length;
   const refundedCount = bills.filter((b) => b.status === "REFUNDED").length;
