@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { AdminSidebar, AdminTopbar } from "@/components/layout/AdminSidebar";
 import { AdminNotifier } from "@/components/admin/AdminNotifier";
+import { MouseAura } from "@/components/animations/MouseAura";
 import { cn } from "@/lib/utils";
 import { ShieldAlert, LogIn } from "lucide-react";
 
@@ -71,7 +72,8 @@ export default function AdminLayout({
 
   // 4. Authorized Admin Layout
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-x-hidden">
+      <MouseAura color="rgba(212, 160, 86, 0.06)" size={480} />
       <AdminNotifier />
       <AdminSidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
       <AdminTopbar sidebarCollapsed={collapsed} />

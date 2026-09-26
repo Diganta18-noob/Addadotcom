@@ -26,6 +26,9 @@ import { CardSpotlight } from "@/components/animations/CardSpotlight";
 import { ShinyText } from "@/components/animations/ShinyText";
 import { Marquee } from "@/components/animations/Marquee";
 import { SegmentedTabs } from "@/components/animations/SegmentedTabs";
+import { MouseAura } from "@/components/animations/MouseAura";
+import { TextReveal } from "@/components/animations/TextReveal";
+import { FloatingDock } from "@/components/animations/FloatingDock";
 
 // ─── Hero Section ───────────────────────────────────────────
 
@@ -792,7 +795,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="scroll-smooth">
+    <div className="scroll-smooth relative">
+      <MouseAura />
+      <FloatingDock />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
