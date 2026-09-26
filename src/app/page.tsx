@@ -512,15 +512,26 @@ function LocationSection() {
               </div>
             </div>
 
-            <MagneticButton>
-              <Link
-                href="/reserve"
-                className="inline-flex items-center gap-2 px-8 py-3 bg-espresso text-cream rounded-full text-sm font-semibold hover:bg-espresso-500 transition-colors"
+            <div className="flex flex-wrap items-center gap-4">
+              <MagneticButton>
+                <Link
+                  href="/reserve"
+                  className="inline-flex items-center gap-2 px-8 py-3 bg-espresso text-cream rounded-full text-sm font-semibold hover:bg-espresso-500 transition-colors"
+                >
+                  <CalendarDays className="w-4 h-4" />
+                  Reserve a Table
+                </Link>
+              </MagneticButton>
+              <a
+                href="https://maps.google.com/?q=Salt+Lake+Sector+V,+Kolkata,+West+Bengal"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 border border-border rounded-full text-sm font-semibold hover:bg-muted transition-colors"
               >
-                <CalendarDays className="w-4 h-4" />
-                Reserve a Table
-              </Link>
-            </MagneticButton>
+                <MapPin className="w-4 h-4 text-caramel" />
+                Get Directions
+              </a>
+            </div>
           </div>
 
           <motion.div

@@ -11,9 +11,10 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "img-src 'self' data: blob: https://images.unsplash.com https://*.googleusercontent.com",
+      "img-src 'self' data: blob: https://images.unsplash.com https://*.googleusercontent.com https://*.gstatic.com https://*.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "connect-src 'self' ws: wss:",
+      "frame-src 'self' https://www.google.com https://maps.google.com https://*.google.com",
+      "connect-src 'self' ws: wss: https://*.google.com https://*.googleapis.com",
     ].join("; "),
   },
 ];

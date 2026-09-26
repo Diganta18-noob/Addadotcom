@@ -116,6 +116,7 @@ export default function ContactPage() {
                 style={{ border: 0 }}
                 allowFullScreen
                 loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
                 title="AddaDotCom Map Location"
               />
             </div>
