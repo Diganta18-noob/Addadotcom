@@ -18,6 +18,8 @@ import {
 import { useCartStore, useUIStore } from "@/store";
 import { cn, formatCurrency } from "@/lib/utils";
 import { DietaryTag, MenuCardSkeleton, EmptyState, SearchInput } from "@/components/shared";
+import { BorderBeam } from "@/components/animations/BorderBeam";
+import { SegmentedTabs } from "@/components/animations/SegmentedTabs";
 import type { MenuItemType, CategoryType, MenuVariant, MenuAddon } from "@/types";
 
 // ─── Demo Data (used when API isn't available) ──────────────
@@ -85,10 +87,18 @@ function MenuCard({ item, onOpenDetail }: { item: MenuItemType; onOpenDetail: (i
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         className={cn(
-          "group rounded-2xl overflow-hidden border border-border bg-card hover:shadow-xl hover:shadow-espresso/5 transition-all duration-300",
+          "group relative rounded-2xl overflow-hidden border border-border bg-card hover:shadow-xl hover:shadow-espresso/5 transition-all duration-300",
           !item.isAvailable && "opacity-60"
         )}
       >
+        {(item.isBestseller || item.isSpecial) && (
+          <BorderBeam
+            size={140}
+            duration={9}
+            colorFrom="#D4A056"
+            colorTo="#7A5650"
+          />
+        )}
         {/* Image */}
         <div className="relative aspect-[4/3] overflow-hidden">
           <Image
@@ -674,35 +684,17 @@ export default function MenuPage() {
           </div>
         </div>
 
-        {/* Category Tabs */}
+        {/* Category Tabs (Skiper UI style) */}
         <div className="mb-8 -mx-4 px-4 overflow-x-auto no-scrollbar">
-          <div className="flex gap-2 min-w-max">
-            <button
-              onClick={() => setActiveCategory("all")}
-              className={cn(
-                "px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap",
-                activeCategory === "all"
-                  ? "bg-espresso text-cream shadow-md"
-                  : "bg-muted hover:bg-muted/80"
-              )}
-            >
-              All Items
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.slug}
-                onClick={() => setActiveCategory(cat.slug)}
-                className={cn(
-                  "px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap",
-                  activeCategory === cat.slug
-                    ? "bg-espresso text-cream shadow-md"
-                    : "bg-muted hover:bg-muted/80"
-                )}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
+          <SegmentedTabs
+            tabs={[
+              { id: "all", label: "All Items" },
+              ...categories.map((cat) => ({ id: cat.slug, label: cat.name })),
+            ]}
+            activeTab={activeCategory}
+            onChange={setActiveCategory}
+            layoutId="main-menu-category-tabs"
+          />
         </div>
 
         {/* Chef's Specials */}

@@ -144,20 +144,39 @@ export function AdminTopbar({ sidebarCollapsed }: AdminTopbarProps) {
     <header
       data-topbar="true"
       className={cn(
-        "fixed top-0 right-0 z-20 h-16 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-4 sm:px-6 transition-all duration-300",
+        "fixed top-0 right-0 z-20 h-16 bg-background/80 backdrop-blur-xl border-b border-border/80 flex items-center justify-between px-4 sm:px-6 transition-all duration-300 shadow-sm",
         sidebarCollapsed ? "left-16" : "left-64"
       )}
     >
-      <div>
-        <h1 className="font-serif text-xl font-semibold">{getPageTitle()}</h1>
-      </div>
       <div className="flex items-center gap-3">
-        <div className="text-right">
-          <p className="text-sm font-medium">Admin User</p>
-          <p className="text-xs text-muted-foreground">admin@addadotcom.cafe</p>
-        </div>
-        <div className="w-9 h-9 rounded-full bg-espresso flex items-center justify-center">
-          <Users className="w-4 h-4 text-caramel" />
+        <h1 className="font-serif text-xl font-bold tracking-tight">{getPageTitle()}</h1>
+        <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          </span>
+          Live Sync
+        </span>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <Link
+          href="/"
+          target="_blank"
+          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-border/80 bg-card hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+        >
+          <span>View Café</span>
+          <span className="text-caramel font-bold">↗</span>
+        </Link>
+
+        <div className="flex items-center gap-3 pl-2 border-l border-border/60">
+          <div className="text-right hidden sm:block">
+            <p className="text-xs font-bold text-foreground">Admin Portal</p>
+            <p className="text-[11px] text-muted-foreground">admin@addadotcom.cafe</p>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-espresso flex items-center justify-center border border-caramel/20 shadow-sm">
+            <Users className="w-4 h-4 text-caramel" />
+          </div>
         </div>
       </div>
     </header>

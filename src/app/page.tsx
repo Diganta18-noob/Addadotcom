@@ -20,6 +20,12 @@ import { formatCurrency } from "@/lib/utils";
 import { HeroTitle } from "@/components/animations/HeroTitle";
 import { MagneticButton } from "@/components/animations/MagneticButton";
 import { useScrollReveal } from "@/components/animations/useScrollReveal";
+import { BorderBeam } from "@/components/animations/BorderBeam";
+import { NumberTicker } from "@/components/animations/NumberTicker";
+import { CardSpotlight } from "@/components/animations/CardSpotlight";
+import { ShinyText } from "@/components/animations/ShinyText";
+import { Marquee } from "@/components/animations/Marquee";
+import { SegmentedTabs } from "@/components/animations/SegmentedTabs";
 
 // ─── Hero Section ───────────────────────────────────────────
 
@@ -54,9 +60,11 @@ function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-caramel/20 backdrop-blur-sm text-caramel rounded-full text-sm font-medium mb-6 border border-caramel/30">
-              <Sparkles className="w-4 h-4" />
-              Welcome to
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-caramel/20 backdrop-blur-md text-caramel rounded-full text-sm font-medium mb-6 border border-caramel/40 shadow-sm">
+              <Sparkles className="w-4 h-4 text-caramel animate-pulse" />
+              <ShinyText className="font-semibold text-caramel">
+                Kolkata&apos;s Premier Specialty Café &amp; Adda
+              </ShinyText>
             </span>
           </motion.div>
 
@@ -134,6 +142,40 @@ function HeroSection() {
   );
 }
 
+// ─── Ticker / Highlights Marquee (Animata style) ────────────
+
+const marqueeHighlights = [
+  { text: "⭐ 4.9 Rating (2,500+ Google Reviews)", tag: "Top Rated" },
+  { text: "☕ 100% Single-Origin Arabica Roasts", tag: "Artisan Coffee" },
+  { text: "🥐 Fresh French Viennoiserie Daily", tag: "Bakery" },
+  { text: "🌿 Farm-To-Cup Ethically Sourced Beans", tag: "Sustainable" },
+  { text: "⚡ Contactless Table QR Ordering", tag: "Fast & Easy" },
+  { text: "🏆 Best Specialty Café in Salt Lake 2026", tag: "Award Winner" },
+  { text: "🍰 Handcrafted Basque Cheesecakes", tag: "Desserts" },
+];
+
+function HighlightsMarquee() {
+  return (
+    <div className="py-3 bg-espresso-950 border-y border-caramel/20 overflow-hidden text-cream relative z-10 shadow-lg">
+      <Marquee pauseOnHover duration="35s" repeat={4}>
+        {marqueeHighlights.map((item, idx) => (
+          <div
+            key={idx}
+            className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-cream-50/5 border border-cream-50/10 backdrop-blur-md mx-2 hover:border-caramel/40 transition-colors"
+          >
+            <span className="text-xs font-semibold text-cream-100 whitespace-nowrap">
+              {item.text}
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-caramel/20 text-caramel">
+              {item.tag}
+            </span>
+          </div>
+        ))}
+      </Marquee>
+    </div>
+  );
+}
+
 // ─── About Section ──────────────────────────────────────────
 
 function AboutSection() {
@@ -202,23 +244,28 @@ function AboutSection() {
               </p>
             </div>
 
-            <div ref={statsRef} className="grid grid-cols-3 gap-4 pt-4">
+            <div ref={statsRef} className="grid grid-cols-3 gap-3 sm:gap-4 pt-4">
               {[
-                { value: "2019", label: "Est." },
-                { value: "15K+", label: "Happy Guests" },
-                { value: "4.8", label: "Rating ★" },
+                { rawValue: 2019, label: "Est. Year", suffix: "" },
+                { rawValue: 15000, label: "Happy Guests", suffix: "+" },
+                { rawValue: 4.8, label: "Rating Score", suffix: " ★", decimalPlaces: 1 },
               ].map((stat) => (
-                <div
-                  key={stat.label}
-                  data-reveal
-                  className="text-center p-4 rounded-2xl bg-muted/50"
-                >
-                  <div className="font-serif text-2xl font-bold text-caramel">
-                    {stat.value}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {stat.label}
-                  </div>
+                <div key={stat.label} data-reveal className="h-full">
+                  <CardSpotlight
+                    spotlightColor="rgba(212, 160, 86, 0.15)"
+                    className="p-3 sm:p-5 text-center rounded-2xl bg-card/60 backdrop-blur-md border border-border/80 hover:border-caramel/40 h-full flex flex-col items-center justify-center transition-all"
+                  >
+                    <div className="font-serif text-2xl sm:text-3xl font-bold text-caramel">
+                      <NumberTicker
+                        value={stat.rawValue}
+                        suffix={stat.suffix}
+                        decimalPlaces={stat.decimalPlaces || 0}
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1 font-medium">
+                      {stat.label}
+                    </div>
+                  </CardSpotlight>
                 </div>
               ))}
             </div>
@@ -234,86 +281,149 @@ function AboutSection() {
 const featuredDishes = [
   {
     name: "Espresso Bloom",
-    description: "Our signature double-shot espresso with house-made caramel",
+    description: "Our signature double-shot espresso infused with house-made salted caramel and velvet foam",
     price: 249,
     image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&q=80",
-    tag: "Bestseller",
+    tag: "Bestseller #1",
+    category: "coffee",
+    hasBeam: true,
   },
   {
     name: "Caramel French Toast",
-    description: "Brioche bread, caramelized banana, maple drizzle, whipped cream",
+    description: "Fluffy brioche, caramelized bananas, Madagascar vanilla maple drizzle, chantilly cream",
     price: 349,
     image: "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=600&q=80",
     tag: "Chef's Pick",
+    category: "food",
   },
   {
     name: "Smoked Chicken Panini",
-    description: "Hickory-smoked chicken, sun-dried tomato, mozzarella, pesto",
+    description: "Hickory-smoked chicken breast, sun-dried tomato tapenade, buffalo mozzarella, fresh pesto",
     price: 399,
     image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&q=80",
-    tag: "Popular",
+    tag: "Popular Lunch",
+    category: "food",
   },
   {
     name: "Matcha Tiramisu",
-    description: "Japanese matcha layered with mascarpone and ladyfinger",
+    description: "Ceremonial Japanese Uji matcha layered with mascarpone mousse and coffee-soaked savoiardi",
     price: 299,
     image: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600&q=80",
-    tag: "New",
+    tag: "Artisan Dessert",
+    category: "dessert",
   },
+  {
+    name: "Iced Spanish Cortado",
+    description: "Rich espresso cut with warm condensed milk and cold single-origin micro-foam",
+    price: 269,
+    image: "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&q=80",
+    tag: "Barista Special",
+    category: "coffee",
+  },
+  {
+    name: "Basque Burnt Cheesecake",
+    description: "Silky caramelized Spanish cheesecake with wild forest berry compote and citrus zest",
+    price: 329,
+    image: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=600&q=80",
+    tag: "Must Try",
+    category: "dessert",
+  },
+];
+
+const dishCategories = [
+  { id: "all", label: "All Favorites" },
+  { id: "coffee", label: "Brews & Coffee", icon: Coffee },
+  { id: "food", label: "Gourmet Bites", icon: UtensilsCrossed },
+  { id: "dessert", label: "Signature Sweets", icon: Sparkles },
 ];
 
 function FeaturedSection() {
   const dishesGridRef = useScrollReveal<HTMLDivElement>(0.12);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const filteredDishes = selectedCategory === "all"
+    ? featuredDishes
+    : featuredDishes.filter((dish) => dish.category === selectedCategory);
 
   return (
     <section className="py-20 lg:py-28 bg-muted/30 noise-bg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <span className="text-caramel text-sm font-semibold tracking-wider uppercase">
-            Must Try
+            Curated Menu
           </span>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold mt-2">
-            Our Bestsellers
+            Chef &amp; Barista Highlights
           </h2>
-          <p className="text-muted-foreground mt-3 max-w-md mx-auto">
-            Handpicked favourites loved by our regulars
+          <p className="text-muted-foreground mt-3 max-w-md mx-auto text-sm">
+            Handcrafted beverages and gourmet plates loved by our regulars
           </p>
+
+          {/* Skiper UI style Segmented Tabs */}
+          <div className="mt-8 flex justify-center">
+            <SegmentedTabs
+              tabs={dishCategories}
+              activeTab={selectedCategory}
+              onChange={setSelectedCategory}
+              layoutId="dish-category-pill"
+            />
+          </div>
         </div>
 
-        <div ref={dishesGridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredDishes.map((dish) => (
-            <div key={dish.name} data-reveal className="group">
-              <div className="rounded-2xl overflow-hidden border border-border bg-card hover:shadow-xl hover:shadow-espresso/5 transition-all duration-300 hover:-translate-y-1">
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <Image
-                    src={dish.image}
-                    alt={dish.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+        <div ref={dishesGridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          {filteredDishes.map((dish) => (
+            <div key={dish.name} data-reveal className="group h-full">
+              <CardSpotlight
+                spotlightColor="rgba(212, 160, 86, 0.16)"
+                className="h-full rounded-2xl overflow-hidden border border-border/80 bg-card hover:shadow-2xl transition-all duration-300 flex flex-col justify-between"
+              >
+                {dish.hasBeam && (
+                  <BorderBeam
+                    size={160}
+                    duration={8}
+                    colorFrom="#D4A056"
+                    colorTo="#7A5650"
                   />
-                  <span className="absolute top-3 left-3 px-3 py-1 bg-caramel text-espresso text-xs font-bold rounded-full">
-                    {dish.tag}
-                  </span>
+                )}
+
+                <div>
+                  <div className="relative aspect-[16/10] overflow-hidden">
+                    <Image
+                      src={dish.image}
+                      alt={dish.name}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <span className="absolute top-3 left-3 px-3 py-1 bg-espresso/80 backdrop-blur-md text-caramel text-xs font-bold rounded-full border border-caramel/30">
+                      {dish.tag}
+                    </span>
+                  </div>
+
+                  <div className="p-5 pb-2">
+                    <h3 className="font-serif text-xl font-bold group-hover:text-caramel transition-colors">
+                      {dish.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">
+                      {dish.description}
+                    </p>
+                  </div>
                 </div>
-                <div className="p-5">
-                  <h3 className="font-serif text-lg font-semibold">{dish.name}</h3>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                    {dish.description}
-                  </p>
-                  <div className="flex items-center justify-between mt-4">
-                    <span className="text-lg font-bold text-caramel font-sans">
+
+                <div className="p-5 pt-0">
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
+                    <span className="text-xl font-bold text-caramel font-sans">
                       {formatCurrency(dish.price)}
                     </span>
                     <Link
                       href="/menu"
-                      className="px-4 py-2 bg-espresso text-cream text-xs font-semibold rounded-full hover:bg-espresso-500 transition-colors"
+                      className="px-5 py-2 bg-espresso text-cream text-xs font-semibold rounded-full hover:bg-espresso-500 transition-colors shadow-sm"
                     >
                       Order Now
                     </Link>
                   </div>
                 </div>
-              </div>
+              </CardSpotlight>
             </div>
           ))}
         </div>
@@ -407,30 +517,33 @@ function TestimonialsSection() {
 
         <div ref={testimonialsGridRef} className="grid md:grid-cols-3 gap-6">
           {reviewsList.map((testimonial, idx) => (
-            <div
-              key={idx}
-              data-reveal
-              className="p-6 rounded-2xl border border-border bg-card hover:shadow-lg transition-all"
-            >
-              <div className="flex items-center gap-1 mb-4">
-                {Array.from({ length: testimonial.rating }).map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-caramel text-caramel" />
-                ))}
-              </div>
-              <p className="text-muted-foreground text-sm leading-relaxed mb-6">
-                &quot;{testimonial.text}&quot;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-espresso flex items-center justify-center text-cream text-xs font-bold">
-                  {testimonial.avatar}
-                </div>
+            <div key={idx} data-reveal className="h-full">
+              <CardSpotlight
+                spotlightColor="rgba(212, 160, 86, 0.12)"
+                className="p-6 rounded-2xl border border-border/80 bg-card hover:shadow-xl transition-all h-full flex flex-col justify-between"
+              >
                 <div>
-                  <p className="text-sm font-semibold">{testimonial.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {testimonial.role}
+                  <div className="flex items-center gap-1 mb-4">
+                    {Array.from({ length: testimonial.rating }).map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-caramel text-caramel" />
+                    ))}
+                  </div>
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-6 italic">
+                    &quot;{testimonial.text}&quot;
                   </p>
                 </div>
-              </div>
+                <div className="flex items-center gap-3 pt-3 border-t border-border/50">
+                  <div className="w-10 h-10 rounded-full bg-espresso flex items-center justify-center text-cream text-xs font-bold border border-caramel/20">
+                    {testimonial.avatar}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">{testimonial.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {testimonial.role}
+                    </p>
+                  </div>
+                </div>
+              </CardSpotlight>
             </div>
           ))}
         </div>
@@ -685,6 +798,7 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <HeroSection />
+      <HighlightsMarquee />
       <AboutSection />
       <FeaturedSection />
       <TestimonialsSection />
