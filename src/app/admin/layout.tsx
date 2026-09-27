@@ -19,6 +19,7 @@ export default function AdminLayout({
   const { data: session, status } = useSession();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const commandPalette = useSkiperCommand();
 
   React.useEffect(() => {
@@ -89,18 +90,24 @@ export default function AdminLayout({
       />
 
       <AdminNotifier />
-      <AdminSidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+      <AdminSidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed(!collapsed)}
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
+      />
       <AdminTopbar
         sidebarCollapsed={collapsed}
+        onOpenMobileNav={() => setMobileOpen(true)}
         onOpenCommand={commandPalette.open}
       />
       <main
         className={cn(
           "pt-16 min-h-screen transition-all duration-300 relative z-10",
-          collapsed ? "ml-16" : "ml-64"
+          collapsed ? "lg:ml-18 ml-0" : "lg:ml-64 ml-0"
         )}
       >
-        <div className="p-4 sm:p-6 pb-20 lg:pb-6">{children}</div>
+        <div className="p-3 sm:p-6 pb-20 lg:pb-8 max-w-7xl mx-auto">{children}</div>
       </main>
     </div>
   );

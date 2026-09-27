@@ -24,6 +24,20 @@
     --input: 30 20% 88%;
     --ring: 5 28% 23%;
     --radius: 0.75rem;
+
+    /* AddaDotCom Admin Portal Tokens */
+    --admin-background: 30 60% 98%;
+    --admin-surface: 0 0% 100%;
+    --admin-surface-raised: 30 50% 99%;
+    --admin-surface-hover: 30 40% 95%;
+    --admin-border: 30 20% 88%;
+    --admin-text: 10 30% 15%;
+    --admin-text-muted: 10 10% 45%;
+    --admin-accent: 35 60% 58%;
+    --admin-accent-hover: 35 60% 50%;
+    --admin-success: 142 71% 45%;
+    --admin-warning: 38 92% 50%;
+    --admin-danger: 0 84% 60%;
   }
 
   .dark {
@@ -46,6 +60,20 @@
     --border: 0 0% 18%;
     --input: 0 0% 18%;
     --ring: 35 60% 58%;
+
+    /* AddaDotCom Admin Portal Tokens - Dark */
+    --admin-background: 0 0% 7%;
+    --admin-surface: 0 0% 10%;
+    --admin-surface-raised: 0 0% 12%;
+    --admin-surface-hover: 0 0% 15%;
+    --admin-border: 0 0% 18%;
+    --admin-text: 30 20% 94%;
+    --admin-text-muted: 30 10% 60%;
+    --admin-accent: 35 60% 58%;
+    --admin-accent-hover: 35 60% 64%;
+    --admin-success: 142 71% 45%;
+    --admin-warning: 38 92% 50%;
+    --admin-danger: 0 62% 50%;
   }
 }
 

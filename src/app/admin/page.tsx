@@ -35,6 +35,10 @@ import {
   Cell,
 } from "recharts";
 
+import { ActivityTimeline, TimelineItem } from "@/components/admin/ActivityTimeline";
+import { ErrorState } from "@/components/admin/ErrorState";
+import { normalizeError, SafeErrorResult } from "@/lib/safeError";
+
 interface DashboardStats {
   todayRevenue: number;
   weeklyRevenue?: number;
@@ -55,9 +59,11 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState<SafeErrorResult | null>(null);
 
   const fetchDashboardStats = useCallback(async () => {
     try {
+      setFetchError(null);
       const res = await fetch(`/api/dashboard?t=${Date.now()}`, {
         cache: "no-store",
         headers: {
@@ -68,14 +74,47 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (data.success) {
         setStats(data.data);
+      } else {
+        setFetchError(normalizeError(data.error || "Failed to load dashboard metrics."));
       }
     } catch (error) {
-      console.error("Failed to fetch dashboard stats:", error);
+      setFetchError(normalizeError(error, "Unable to establish live connection to dashboard data."));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
+
+  const activityItems: TimelineItem[] = React.useMemo(() => {
+    if (!stats) return [];
+    const list: TimelineItem[] = [];
+
+    (stats.recentOrders || []).slice(0, 5).forEach((order: any) => {
+      list.push({
+        id: `order-${order.id}`,
+        type: "order",
+        title: `Order ${order.orderNumber.split("-").pop() || order.orderNumber}`,
+        description: `${order.type?.replace("_", " ")} ${order.table ? `• Table ${order.table.number}` : ""}`,
+        time: order.createdAt ? formatTime(order.createdAt) : "Today",
+        badge: order.status,
+        badgeVariant: order.status === "COMPLETED" ? "success" : order.status === "PREPARING" ? "warning" : "info",
+      });
+    });
+
+    (stats.upcomingReservations || []).slice(0, 4).forEach((res: any) => {
+      list.push({
+        id: `res-${res.id}`,
+        type: "reservation",
+        title: `Booking: ${res.guestName}`,
+        description: `Party of ${res.partySize} at ${res.timeSlot} ${res.table ? `• Table ${res.table.number}` : ""}`,
+        time: res.timeSlot || "Today",
+        badge: res.status,
+        badgeVariant: res.status === "CONFIRMED" ? "success" : "info",
+      });
+    });
+
+    return list;
+  }, [stats]);
 
   useSSE({
     "new-order": () => fetchDashboardStats(),
@@ -116,6 +155,15 @@ export default function AdminDashboard() {
           </button>
         </div>
       </div>
+
+      {/* Error state if API call fails */}
+      {fetchError && !stats && (
+        <ErrorState
+          message={fetchError.safeMessage}
+          requestId={fetchError.requestId}
+          onRetry={fetchDashboardStats}
+        />
+      )}
 
       {/* KPI Cards (Vengence UI + Animata Style) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -418,6 +466,30 @@ export default function AdminDashboard() {
               </CardSpotlight>
             </motion.div>
           </div>
+
+          {/* Activity Timeline Row */}
+          {activityItems.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.85 }}
+            >
+              <CardSpotlight className="p-6 border border-border/80 bg-card/90 backdrop-blur-xl">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h3 className="font-serif text-lg font-bold">Operational Activity Stream</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Chronological log of orders, guest bookings & service status
+                    </p>
+                  </div>
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-caramel/10 text-caramel border border-caramel/20">
+                    Live Stream
+                  </span>
+                </div>
+                <ActivityTimeline items={activityItems} />
+              </CardSpotlight>
+            </motion.div>
+          )}
         </>
       )}
     </div>

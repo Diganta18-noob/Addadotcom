@@ -1,9 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatCurrency } from "@/lib/utils";
-import { SearchInput, EmptyState, DietaryTag } from "@/components/shared";
+import { DietaryTag } from "@/components/shared";
+import { FilterBar, ActiveFilter } from "@/components/admin/FilterBar";
+import { DataTable, ColumnDef } from "@/components/admin/DataTable";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { ErrorState } from "@/components/admin/ErrorState";
+import { normalizeError, SafeErrorResult } from "@/lib/safeError";
 import {
   Plus,
   Edit,
@@ -16,6 +21,10 @@ import {
   Sparkles,
   Loader2,
   RefreshCw,
+  LayoutGrid,
+  List,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -42,13 +51,17 @@ export default function AdminMenuPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<SafeErrorResult | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [isEditing, setIsEditing] = useState(false);
   const [currentItem, setCurrentItem] = useState<Partial<MenuItem> | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const fetchMenu = useCallback(async () => {
     try {
+      setFetchError(null);
       const res = await fetch("/api/menu");
       const data = await res.json();
       if (data.success && data.data) {
@@ -85,9 +98,11 @@ export default function AdminMenuPage() {
           addons: typeof item.addons === "string" ? JSON.parse(item.addons) : item.addons || [],
         }));
         setItems(fetchedItems);
+      } else {
+        setFetchError(normalizeError(data.error || "Failed to load menu catalogue."));
       }
     } catch (error) {
-      console.error("Failed to fetch menu:", error);
+      setFetchError(normalizeError(error, "Could not sync with the menu catalogue server."));
     } finally {
       setLoading(false);
     }
@@ -97,12 +112,27 @@ export default function AdminMenuPage() {
     fetchMenu();
   }, [fetchMenu]);
 
-  const filteredItems = items.filter((item) => {
-    const matchesCategory = selectedCategory === "ALL" || item.categoryName === selectedCategory;
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          item.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      const matchesCategory = selectedCategory === "ALL" || item.categoryName === selectedCategory;
+      const matchesSearch =
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [items, selectedCategory, searchQuery]);
+
+  const activeFilters: ActiveFilter[] = useMemo(() => {
+    const list: ActiveFilter[] = [];
+    if (selectedCategory !== "ALL") {
+      list.push({
+        id: "category",
+        label: "Category",
+        value: selectedCategory,
+      });
+    }
+    return list;
+  }, [selectedCategory]);
 
   const toggleAvailability = async (id: string) => {
     const item = items.find((i) => i.id === id);
@@ -110,7 +140,6 @@ export default function AdminMenuPage() {
 
     const nextAvailable = !item.isAvailable;
 
-    // Optimistic update
     setItems((prev) =>
       prev.map((i) => (i.id === id ? { ...i, isAvailable: nextAvailable } : i))
     );
@@ -155,6 +184,15 @@ export default function AdminMenuPage() {
     }
   };
 
+  const handleBulkSetAvailability = async (selected: MenuItem[], available: boolean) => {
+    for (const item of selected) {
+      if (item.isAvailable !== available) {
+        await toggleAvailability(item.id);
+      }
+    }
+    toast.success(`Updated ${selected.length} items to ${available ? "Available" : "Sold Out"}`);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentItem?.name || currentItem.price === undefined || !currentItem.categoryId) {
@@ -162,7 +200,7 @@ export default function AdminMenuPage() {
       return;
     }
 
-    setLoading(true);
+    setIsSaving(true);
     try {
       const isEdit = !!currentItem.id;
       const url = isEdit ? `/api/menu/${currentItem.id}` : "/api/menu";
@@ -193,7 +231,7 @@ export default function AdminMenuPage() {
     } catch {
       toast.error("Error saving menu item");
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -214,167 +252,361 @@ export default function AdminMenuPage() {
     setIsEditing(true);
   };
 
-  if (loading && items.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-caramel" />
-        <span className="ml-3 text-muted-foreground">Loading menu items...</span>
-      </div>
-    );
-  }
+  // Table Columns Definition
+  const columns: ColumnDef<MenuItem>[] = [
+    {
+      id: "name",
+      header: "Dish / Beverage",
+      sortable: true,
+      accessorKey: "name",
+      cell: (item) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/60">
+            {item.image ? (
+              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                <ImageIcon className="w-4 h-4" />
+              </div>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-foreground truncate">{item.name}</p>
+            <p className="text-[11px] text-muted-foreground truncate max-w-[220px]">
+              {item.description || "No description provided"}
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "category",
+      header: "Category",
+      sortable: true,
+      accessorKey: "categoryName",
+      cell: (item) => (
+        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted border border-border/80">
+          {item.categoryName}
+        </span>
+      ),
+    },
+    {
+      id: "price",
+      header: "Price",
+      sortable: true,
+      accessorKey: "price",
+      cell: (item) => (
+        <span className="font-semibold text-caramel font-sans">
+          {formatCurrency(item.price)}
+        </span>
+      ),
+    },
+    {
+      id: "tags",
+      header: "Dietary",
+      hideOnMobile: true,
+      cell: (item) => (
+        <div className="flex items-center gap-1 flex-wrap">
+          {item.tags.map((tag) => (
+            <DietaryTag key={tag} tag={tag} />
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: "status",
+      header: "Status",
+      cell: (item) => (
+        <button
+          onClick={() => toggleAvailability(item.id)}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors",
+            item.isAvailable
+              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20"
+              : "bg-rose-500/10 text-rose-600 border-rose-500/20 hover:bg-rose-500/20"
+          )}
+        >
+          {item.isAvailable ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+          <span>{item.isAvailable ? "Available" : "Sold Out"}</span>
+        </button>
+      ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: (item) => (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => handleEditClick(item)}
+            className="p-1.5 rounded-lg border border-border/80 hover:bg-muted text-foreground transition-colors"
+            title="Edit Item"
+          >
+            <Edit className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => handleDelete(item.id)}
+            className="p-1.5 rounded-lg border border-border/80 hover:bg-rose-500/10 text-muted-foreground hover:text-destructive transition-colors"
+            title="Delete Item"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Top section */}
+      {/* Top Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setSelectedCategory("ALL")}
-            className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium transition-all",
-              selectedCategory === "ALL" ? "bg-espresso text-cream" : "bg-muted hover:bg-muted/80"
-            )}
-          >
-            All Categories
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.name)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                selectedCategory === cat.name ? "bg-espresso text-cream" : "bg-muted hover:bg-muted/80"
-              )}
-            >
-              {cat.name}
-            </button>
-          ))}
+        <div>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Menu Catalogue
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            Manage culinary offerings, pricing, availability & ingredients
+          </p>
         </div>
 
-        <div className="flex gap-2 ml-auto">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {/* View Mode Switcher */}
+          <div className="flex items-center bg-muted/60 p-1 rounded-xl border border-border/80">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={cn(
+                "p-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5",
+                viewMode === "grid"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Grid View"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              <span className="hidden md:inline">Grid</span>
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={cn(
+                "p-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5",
+                viewMode === "table"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Table View"
+            >
+              <List className="w-4 h-4" />
+              <span className="hidden md:inline">Table</span>
+            </button>
+          </div>
+
           <button
-            onClick={() => { setLoading(true); fetchMenu(); }}
-            className="px-3 py-2 bg-muted border border-border rounded-lg text-sm hover:bg-muted/80 transition-colors"
-            title="Refresh"
+            onClick={() => {
+              setLoading(true);
+              fetchMenu();
+            }}
+            className="p-2.5 bg-card border border-border/80 rounded-xl text-xs font-semibold hover:bg-muted transition-colors shadow-xs"
+            title="Refresh Catalogue"
           >
-            <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+            <RefreshCw className={cn("w-4 h-4", loading && "animate-spin text-caramel")} />
           </button>
+
           <button
             onClick={handleAddClick}
-            className="flex items-center gap-2 px-4 py-2.5 bg-espresso text-cream rounded-xl text-sm font-semibold hover:bg-espresso-500 transition-colors shadow-md"
+            className="flex items-center gap-2 px-4 py-2.5 bg-espresso text-cream rounded-xl text-xs sm:text-sm font-semibold hover:bg-espresso-500 transition-colors shadow-xs"
           >
-            <Plus className="w-4 h-4" /> Add Item
+            <Plus className="w-4 h-4" /> Add Dish
           </button>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="max-w-md">
-        <SearchInput
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder="Search menu items by name or description..."
-        />
-      </div>
-
-      {/* Menu Grid */}
-      {filteredItems.length === 0 ? (
-        <EmptyState title="No items found" description="Try creating a new menu item or clearing your search filter." />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredItems.map((item) => (
-            <motion.div
-              key={item.id}
-              layout
-              className={cn(
-                "rounded-2xl border border-border bg-card overflow-hidden flex flex-col group relative transition-all hover:shadow-lg",
-                !item.isAvailable && "opacity-70"
-              )}
-            >
-              {/* Image Preview */}
-              <div className="aspect-[4/3] relative bg-muted overflow-hidden">
-                {item.image ? (
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <ImageIcon className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                )}
-                <div className="absolute top-3 right-3 flex gap-1">
-                  <button
-                    onClick={() => toggleAvailability(item.id)}
-                    className={cn(
-                      "p-1.5 rounded-full backdrop-blur-md shadow-md text-white transition-colors",
-                      item.isAvailable ? "bg-green-600/80 hover:bg-green-600" : "bg-red-600/80 hover:bg-red-600"
-                    )}
-                    title={item.isAvailable ? "Mark Out of Stock" : "Mark Available"}
-                  >
-                    {item.isAvailable ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Card Body */}
-              <div className="p-4 flex-1 flex flex-col">
-                <div className="flex justify-between items-start gap-2 mb-2">
-                  <h3 className="font-serif font-bold text-base line-clamp-1">{item.name}</h3>
-                  <span className="font-sans font-bold text-caramel whitespace-nowrap">
-                    {formatCurrency(item.price)}
-                  </span>
-                </div>
-
-                <p className="text-xs text-muted-foreground line-clamp-2 flex-1 mb-4">
-                  {item.description}
-                </p>
-
-                <div className="flex flex-wrap gap-1 mb-4">
-                  <span className="px-2 py-0.5 bg-muted text-[10px] rounded-full text-muted-foreground font-medium">
-                    {item.categoryName}
-                  </span>
-                  {item.tags.map((tag) => (
-                    <DietaryTag key={tag} tag={tag} />
-                  ))}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2 pt-3 border-t border-border">
-                  <button
-                    onClick={() => handleEditClick(item)}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 border border-border rounded-xl text-xs font-semibold hover:bg-muted transition-colors"
-                  >
-                    <Edit className="w-3.5 h-3.5" /> Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="p-2 border border-border rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
+      {/* Filter Bar */}
+      <FilterBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search menu by dish name or description..."
+        activeFilters={activeFilters}
+        onRemoveFilter={() => setSelectedCategory("ALL")}
+        onClearAll={() => {
+          setSelectedCategory("ALL");
+          setSearchQuery("");
+        }}
+      >
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="px-3 py-2 bg-card border border-border/80 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-accent shadow-xs h-11"
+        >
+          <option value="ALL">All Categories</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.name}>
+              {cat.name}
+            </option>
           ))}
-        </div>
+        </select>
+      </FilterBar>
+
+      {/* Error State */}
+      {fetchError && (
+        <ErrorState
+          message={fetchError.safeMessage}
+          requestId={fetchError.requestId}
+          onRetry={fetchMenu}
+        />
+      )}
+
+      {/* View Switch: Table or Grid */}
+      {viewMode === "table" ? (
+        <DataTable
+          data={filteredItems}
+          columns={columns}
+          keyExtractor={(item) => item.id}
+          isLoading={loading}
+          pageSize={10}
+          bulkActions={[
+            {
+              label: "Mark Available",
+              icon: CheckCircle2,
+              onClick: (items) => handleBulkSetAvailability(items, true),
+            },
+            {
+              label: "Mark Out of Stock",
+              icon: AlertCircle,
+              variant: "destructive",
+              onClick: (items) => handleBulkSetAvailability(items, false),
+            },
+          ]}
+          emptyTitle="No menu items match your search"
+          emptyDescription="Try clearing your filters or create a new dish for the café catalogue."
+          emptyActionLabel="Add Dish"
+          onEmptyAction={handleAddClick}
+        />
+      ) : (
+        /* Grid Catalogue View */
+        <>
+          {loading && items.length === 0 ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-caramel" />
+              <span className="ml-3 text-xs sm:text-sm text-muted-foreground font-semibold">
+                Loading menu catalogue...
+              </span>
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <EmptyState
+              title="No dishes found"
+              description="No menu items matched your category filter or search query."
+              actionLabel="Add Dish"
+              onAction={handleAddClick}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+              {filteredItems.map((item) => (
+                <motion.div
+                  key={item.id}
+                  layout
+                  className={cn(
+                    "rounded-2xl border border-border/80 bg-card overflow-hidden flex flex-col group relative transition-all hover:shadow-md hover:border-caramel/40",
+                    !item.isAvailable && "opacity-75"
+                  )}
+                >
+                  {/* Image Preview with 1.02 hover zoom */}
+                  <div className="aspect-[4/3] relative bg-muted overflow-hidden">
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="absolute top-3 right-3 flex gap-1">
+                      <button
+                        onClick={() => toggleAvailability(item.id)}
+                        className={cn(
+                          "p-2 rounded-full backdrop-blur-md shadow-md text-white transition-colors focus-visible:outline-2",
+                          item.isAvailable ? "bg-emerald-600/90 hover:bg-emerald-600" : "bg-rose-600/90 hover:bg-rose-600"
+                        )}
+                        title={item.isAvailable ? "Mark Out of Stock" : "Mark Available"}
+                      >
+                        {item.isAvailable ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="p-4 flex-1 flex flex-col">
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                      <h3 className="font-serif font-bold text-base text-foreground line-clamp-1">{item.name}</h3>
+                      <span className="font-sans font-bold text-caramel whitespace-nowrap">
+                        {formatCurrency(item.price)}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground line-clamp-2 flex-1 mb-4 leading-relaxed">
+                      {item.description || "No description provided"}
+                    </p>
+
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      <span className="px-2.5 py-0.5 bg-muted text-[10px] rounded-full text-muted-foreground font-semibold">
+                        {item.categoryName}
+                      </span>
+                      {item.tags.map((tag) => (
+                        <DietaryTag key={tag} tag={tag} />
+                      ))}
+                    </div>
+
+                    {/* Action Buttons (44px target) */}
+                    <div className="flex gap-2 pt-3 border-t border-border/60">
+                      <button
+                        onClick={() => handleEditClick(item)}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 border border-border/80 rounded-xl text-xs font-semibold hover:bg-muted transition-colors h-11"
+                      >
+                        <Edit className="w-3.5 h-3.5" /> Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="w-11 h-11 flex items-center justify-center border border-border/80 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Delete dish"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Edit/Add Modal */}
       <AnimatePresence>
         {isEditing && currentItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsEditing(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+              onClick={() => setIsEditing(false)}
+            />
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative z-10 w-full max-w-lg bg-background p-6 rounded-2xl shadow-xl flex flex-col max-h-[90vh] overflow-y-auto"
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="relative z-10 w-full max-w-lg bg-card border border-border/80 p-6 rounded-2xl shadow-xl flex flex-col max-h-[90vh] overflow-y-auto"
             >
-              <h3 className="font-serif text-xl font-bold mb-4">
-                {currentItem.id ? "Edit Menu Item" : "Add Menu Item"}
-              </h3>
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-border/80">
+                <h3 className="font-serif text-xl font-bold">
+                  {currentItem.id ? "Edit Menu Item" : "Add Menu Item"}
+                </h3>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
               <form onSubmit={handleSave} className="space-y-4">
                 <div>
@@ -383,7 +615,7 @@ export default function AdminMenuPage() {
                     type="text"
                     value={currentItem.name || ""}
                     onChange={(e) => setCurrentItem((prev) => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
+                    className="w-full px-3 py-2 bg-muted/40 border border-border/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                     required
                   />
                 </div>
@@ -395,7 +627,7 @@ export default function AdminMenuPage() {
                       type="number"
                       value={currentItem.price || 0}
                       onChange={(e) => setCurrentItem((prev) => ({ ...prev, price: parseFloat(e.target.value) }))}
-                      className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
+                      className="w-full px-3 py-2 bg-muted/40 border border-border/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                       required
                     />
                   </div>
@@ -404,10 +636,12 @@ export default function AdminMenuPage() {
                     <select
                       value={currentItem.categoryId || ""}
                       onChange={(e) => setCurrentItem((prev) => ({ ...prev, categoryId: e.target.value }))}
-                      className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
+                      className="w-full px-3 py-2 bg-muted/40 border border-border/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                     >
                       {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -418,7 +652,7 @@ export default function AdminMenuPage() {
                   <textarea
                     value={currentItem.description || ""}
                     onChange={(e) => setCurrentItem((prev) => ({ ...prev, description: e.target.value }))}
-                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50 resize-none"
+                    className="w-full px-3 py-2 bg-muted/40 border border-border/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"
                     rows={3}
                     required
                   />
@@ -430,8 +664,8 @@ export default function AdminMenuPage() {
                     type="text"
                     value={currentItem.image || ""}
                     onChange={(e) => setCurrentItem((prev) => ({ ...prev, image: e.target.value }))}
-                    placeholder="https://example.com/image.jpg"
-                    className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full px-3 py-2 bg-muted/40 border border-border/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
 
@@ -454,8 +688,8 @@ export default function AdminMenuPage() {
                           className={cn(
                             "px-3 py-1.5 border rounded-full text-xs font-medium transition-all",
                             isSelected
-                              ? "bg-caramel text-espresso border-caramel"
-                              : "border-border hover:bg-muted"
+                              ? "bg-caramel text-espresso border-caramel font-semibold"
+                              : "border-border/80 hover:bg-muted"
                           )}
                         >
                           {tag.replace("_", " ")}
@@ -465,19 +699,27 @@ export default function AdminMenuPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-4 border-t border-border">
+                <div className="flex gap-3 pt-4 border-t border-border/80">
                   <button
                     type="button"
                     onClick={() => setIsEditing(false)}
-                    className="flex-1 px-4 py-2.5 border border-border rounded-xl text-sm font-semibold hover:bg-muted transition-colors"
+                    className="flex-1 px-4 py-2.5 border border-border/80 rounded-xl text-xs sm:text-sm font-semibold hover:bg-muted transition-colors h-11"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2.5 bg-espresso text-cream rounded-xl text-sm font-semibold hover:bg-espresso-500 transition-colors"
+                    disabled={isSaving}
+                    className="flex-1 px-4 py-2.5 bg-espresso text-cream rounded-xl text-xs sm:text-sm font-semibold hover:bg-espresso-500 transition-colors flex items-center justify-center gap-2 h-11"
                   >
-                    Save Changes
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-caramel" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>Save Dish</span>
+                    )}
                   </button>
                 </div>
               </form>
