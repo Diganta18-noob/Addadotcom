@@ -1,6 +1,7 @@
 /**
  * Safe Error Normalizer
- * NEVER exposes raw database, Prisma, SQL, JSON parse errors, or internal technical stack traces to the user.
+ * NEVER exposes raw database, Prisma, SQL, JSON parse errors, internal error codes,
+ * or stack traces to the user.
  * Always normalizes to clean, professional, human-readable copy.
  */
 
@@ -59,6 +60,11 @@ const TECHNICAL_TERMS = [
   ">",
   "{",
   "}",
+  "server_",
+  "err_",
+  "invalid_",
+  "failed_",
+  "unknown_",
 ];
 
 export function normalizeError(
@@ -81,16 +87,23 @@ export function normalizeError(
     }
   }
 
-  // Check if candidate contains ANY technical jargon or code indicators
   const lower = candidateMessage.toLowerCase();
   const hasTechnicalTerms = TECHNICAL_TERMS.some((term) => lower.includes(term));
 
+  // Also reject CONSTANT_CASE strings like "SERVER_COMMUNICATION_FAILED"
+  const isConstantCase = /^[A-Z0-9_]{4,}$/.test(candidateMessage.trim());
+
+  // Also reject strings without spaces (likely error codes or class names)
+  const isSingleWordCode = !candidateMessage.trim().includes(" ") && candidateMessage.length > 3;
+
   let safeMessage = fallbackMessage;
 
-  // Only allow explicitly friendly, non-technical human sentences
+  // Only allow explicitly friendly, natural language human sentences
   if (
     candidateMessage &&
     !hasTechnicalTerms &&
+    !isConstantCase &&
+    !isSingleWordCode &&
     candidateMessage.length >= 8 &&
     candidateMessage.length <= 120
   ) {
