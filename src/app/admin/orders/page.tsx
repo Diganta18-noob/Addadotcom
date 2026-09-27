@@ -107,14 +107,20 @@ export default function AdminOrders() {
     try {
       const endpoint = (all || showCompleted) ? "/api/orders" : "/api/orders?today=true";
       const res = await fetch(endpoint);
+      if (!res.ok) return;
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) return;
+
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         let fetchedList = data.data;
         if (fetchedList.length === 0 && !all && !showCompleted) {
           const fallbackRes = await fetch("/api/orders");
-          const fallbackData = await fallbackRes.json();
-          if (fallbackData.success && Array.isArray(fallbackData.data)) {
-            fetchedList = fallbackData.data;
+          if (fallbackRes.ok && fallbackRes.headers.get("content-type")?.includes("application/json")) {
+            const fallbackData = await fallbackRes.json();
+            if (fallbackData.success && Array.isArray(fallbackData.data)) {
+              fetchedList = fallbackData.data;
+            }
           }
         }
 

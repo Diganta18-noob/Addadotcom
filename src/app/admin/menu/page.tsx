@@ -63,6 +63,14 @@ export default function AdminMenuPage() {
     try {
       setFetchError(null);
       const res = await fetch("/api/menu");
+      if (!res.ok) {
+        throw new Error("SERVER_COMMUNICATION_FAILED");
+      }
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("INVALID_SERVER_RESPONSE");
+      }
+
       const data = await res.json();
       if (data.success && data.data) {
         const rawItems = Array.isArray(data.data) ? data.data : data.data.items || [];
@@ -99,10 +107,20 @@ export default function AdminMenuPage() {
         }));
         setItems(fetchedItems);
       } else {
-        setFetchError(normalizeError(data.error || "Failed to load menu catalogue."));
+        setFetchError(
+          normalizeError(
+            data?.message || data?.error,
+            "Unable to load menu catalogue. Please try again."
+          )
+        );
       }
     } catch (error) {
-      setFetchError(normalizeError(error, "Could not sync with the menu catalogue server."));
+      setFetchError(
+        normalizeError(
+          error,
+          "Unable to load menu catalogue at this moment. Please check your connection or try again."
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -445,17 +463,17 @@ export default function AdminMenuPage() {
         </select>
       </FilterBar>
 
-      {/* Error State */}
-      {fetchError && (
+      {/* Error State or View Switch: Table or Grid */}
+      {fetchError ? (
         <ErrorState
           message={fetchError.safeMessage}
           requestId={fetchError.requestId}
-          onRetry={fetchMenu}
+          onRetry={() => {
+            setLoading(true);
+            fetchMenu();
+          }}
         />
-      )}
-
-      {/* View Switch: Table or Grid */}
-      {viewMode === "table" ? (
+      ) : viewMode === "table" ? (
         <DataTable
           data={filteredItems}
           columns={columns}

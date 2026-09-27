@@ -12,11 +12,17 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({
-  message = "Something went wrong while loading this data. Please try again.",
+  message = "Unable to synchronize data with the server. Please try again.",
   requestId,
   onRetry,
   className,
 }: ErrorStateProps) {
+  // Dual-layer guard: ensure no raw technical error or JSON parse error reaches the screen
+  const isTechnical = /token|doctype|json|syntax|typeerror|failed to fetch|<|>/i.test(message);
+  const displayMessage = isTechnical
+    ? "Unable to synchronize data with the server. Please try again."
+    : message;
+
   return (
     <div
       role="alert"
@@ -32,7 +38,7 @@ export function ErrorState({
         Data Synchronization Issue
       </h3>
       <p className="text-sm text-muted-foreground max-w-sm mb-2 leading-relaxed">
-        {message}
+        {displayMessage}
       </p>
       {requestId && (
         <p className="text-[11px] font-mono text-muted-foreground/70 mb-5">

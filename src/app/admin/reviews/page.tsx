@@ -43,14 +43,22 @@ export default function AdminReviewsPage() {
     try {
       setFetchError(null);
       const res = await fetch("/api/reviews?admin=true");
+      if (!res.ok) {
+        throw new Error("SERVER_ERROR");
+      }
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("INVALID_CONTENT_TYPE");
+      }
+
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setReviews(data.data);
       } else {
-        setFetchError(normalizeError(data.error || "Failed to load customer reviews."));
+        setFetchError(normalizeError(data?.message || data?.error, "Failed to load customer reviews."));
       }
     } catch (err) {
-      setFetchError(normalizeError(err, "Unable to load customer feedback queue."));
+      setFetchError(normalizeError(err, "Unable to load customer feedback queue at this time."));
     } finally {
       setLoading(false);
     }
@@ -185,15 +193,6 @@ export default function AdminReviewsPage() {
         </div>
       </div>
 
-      {/* Error State */}
-      {fetchError && (
-        <ErrorState
-          message={fetchError.safeMessage}
-          requestId={fetchError.requestId}
-          onRetry={fetchReviews}
-        />
-      )}
-
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
@@ -232,8 +231,17 @@ export default function AdminReviewsPage() {
         </div>
       </div>
 
-      {/* Reviews List */}
-      {filteredReviews.length === 0 ? (
+      {/* Reviews List or Error State */}
+      {fetchError ? (
+        <ErrorState
+          message={fetchError.safeMessage}
+          requestId={fetchError.requestId}
+          onRetry={() => {
+            setLoading(true);
+            fetchReviews();
+          }}
+        />
+      ) : filteredReviews.length === 0 ? (
         <EmptyState
           icon={MessageSquare}
           title="No reviews in this queue"

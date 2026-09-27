@@ -71,6 +71,14 @@ export default function AdminDashboard() {
           Pragma: "no-cache",
         },
       });
+      if (!res.ok) {
+        throw new Error("SERVER_COMMUNICATION_FAILED");
+      }
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("INVALID_SERVER_RESPONSE");
+      }
+
       const data = await res.json();
       if (data.success) {
         setStats(data.data);
