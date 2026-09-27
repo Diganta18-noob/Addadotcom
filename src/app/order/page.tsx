@@ -86,6 +86,50 @@ export default function OrderPage() {
   const qrTableParam = searchParams?.get("table");
   const isQRMode = searchParams?.get("qr") === "1";
 
+  // Reconcile and auto-expire stale activeOrder on page mount
+  React.useEffect(() => {
+    if (!activeOrder) return;
+
+    // 1. Expiration check: If order is older than 8 hours or placed on a prior date, auto-clear
+    if (activeOrder.createdAt) {
+      const orderDate = new Date(activeOrder.createdAt);
+      const ageHours = (Date.now() - orderDate.getTime()) / (1000 * 60 * 60);
+      const isPriorDay = orderDate.toDateString() !== new Date().toDateString();
+
+      if (ageHours > 8 || isPriorDay) {
+        clearActiveOrder();
+        return;
+      }
+    }
+
+    // 2. Database status reconciliation: verify if order was already completed/cancelled
+    const targetId = activeOrder.id || activeOrder.orderNumber;
+    if (!targetId) return;
+
+    fetch(`/api/orders/${targetId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          const dbOrder = data.data;
+          if (dbOrder.status === "COMPLETED" || dbOrder.status === "CANCELLED") {
+            // Order has finished; clear from active screen
+            clearActiveOrder();
+            toast("Your previous order has already been completed.", { icon: "✅" });
+          } else {
+            setLiveOrderStatus(dbOrder.status);
+            if (dbOrder.status !== activeOrder.status) {
+              setActiveOrder({ ...activeOrder, status: dbOrder.status });
+            }
+          }
+        } else if (data.status === 404) {
+          clearActiveOrder();
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not verify active order status with server:", err);
+      });
+  }, [activeOrder, clearActiveOrder, setActiveOrder]);
+
   React.useEffect(() => {
     if (qrTableParam && isQRMode) {
       setOrderType("DINE_IN");
@@ -115,7 +159,16 @@ export default function OrderPage() {
       fetchTables();
     },
     "new-order": () => fetchTables(),
-    "bill-paid": () => fetchTables(),
+    "bill-paid": (data) => {
+      fetchTables();
+      if (
+        data?.orderId === currentOrder?.id ||
+        data?.orderNumber === currentOrder?.orderNumber
+      ) {
+        setLiveOrderStatus("COMPLETED");
+        toast.success("Bill settled! Thank you for dining with us.", { duration: 6000 });
+      }
+    },
     "order-updated": (data) => {
       if (
         data?.orderId === currentOrder?.id ||
@@ -127,8 +180,14 @@ export default function OrderPage() {
             ACCEPTED: "✅ Kitchen accepted your order!",
             PREPARING: "👨‍🍳 Your order is being prepared...",
             READY: "🔔 Your order is ready!",
+            SERVED: "🍽️ Your meal has been served!",
+            COMPLETED: "✨ Order completed! Thank you for dining with us.",
           };
           if (msgs[data.status]) toast.success(msgs[data.status], { duration: 5000 });
+          if (data.status === "CANCELLED") {
+            toast.error("This order was cancelled by cafe staff.");
+            clearActiveOrder();
+          }
         }
       }
     },
@@ -310,9 +369,37 @@ export default function OrderPage() {
             className="space-y-1 text-center"
           >
             <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground">
-              Order Placed! 🎉
+              {currentStatus === "COMPLETED"
+                ? "Order Completed! 🎉"
+                : currentStatus === "SERVED"
+                ? "Meal Served! 🍽️"
+                : currentStatus === "READY"
+                ? "Order Ready! 🔔"
+                : currentStatus === "PREPARING"
+                ? "Kitchen Preparing 👨‍🍳"
+                : currentStatus === "ACCEPTED"
+                ? "Order Accepted! ✅"
+                : "Order Placed! 🎉"}
             </h1>
-            {activeOrder?.type === "DINE_IN" ? (
+            {currentStatus === "COMPLETED" ? (
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-sm">
+                  Your order has been completed and settled.
+                </p>
+                <p className="text-xs text-muted-foreground/80">
+                  Thank you for dining with AddaDotCom! We hope to see you again soon.
+                </p>
+              </div>
+            ) : currentStatus === "SERVED" ? (
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-sm">
+                  Your meal has been served at your table!
+                </p>
+                <p className="text-xs text-muted-foreground/80">
+                  Enjoy your food! Your bill will be presented at the table after your meal.
+                </p>
+              </div>
+            ) : activeOrder?.type === "DINE_IN" ? (
               <div className="space-y-1">
                 <p className="text-muted-foreground text-sm">
                   Your order is being prepared! Sit back and relax.
@@ -366,7 +453,15 @@ export default function OrderPage() {
             <div className="flex items-center gap-2 pt-2 border-t border-cream/10">
               <Clock className="w-3.5 h-3.5 text-caramel" />
               <span className="text-xs text-cream/80">
-                Est. ready in <strong className="text-caramel">~15 minutes</strong>
+                {currentStatus === "COMPLETED" ? (
+                  <strong className="text-green-400">Order Completed & Closed</strong>
+                ) : currentStatus === "SERVED" ? (
+                  <strong className="text-caramel">Served • Enjoy your meal!</strong>
+                ) : currentStatus === "READY" ? (
+                  <strong className="text-green-400">Ready now!</strong>
+                ) : (
+                  <>Est. ready in <strong className="text-caramel">~15 minutes</strong></>
+                )}
               </span>
             </div>
           </motion.div>
@@ -388,6 +483,8 @@ export default function OrderPage() {
                 { key: "ACCEPTED", label: "Accepted", icon: "✅" },
                 { key: "PREPARING", label: "Preparing", icon: "👨‍🍳" },
                 { key: "READY", label: "Ready", icon: "🔔" },
+                { key: "SERVED", label: "Served", icon: "🍽️" },
+                { key: "COMPLETED", label: "Done", icon: "✨" },
               ];
               const statusOrder = ["PLACED", "ACCEPTED", "PREPARING", "READY", "SERVED", "COMPLETED"];
               const currentIdx = statusOrder.indexOf(currentStatus);
