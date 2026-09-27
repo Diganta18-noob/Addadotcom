@@ -13,6 +13,8 @@ import {
   Users,
   RefreshCw,
   Loader2,
+  UtensilsCrossed,
+  BarChart3,
 } from "lucide-react";
 import { cn, formatCurrency, formatTime } from "@/lib/utils";
 import { StatusBadge, DashboardCardSkeleton } from "@/components/shared";
@@ -101,13 +103,6 @@ export default function AdminDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            Real-time SSE Active
-          </span>
           <button
             onClick={() => {
               setRefreshing(true);
@@ -206,7 +201,15 @@ export default function AdminDashboard() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.6} />
                     <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`} />
+                    <YAxis
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      domain={[0, "auto"]}
+                      tickFormatter={(v: number) =>
+                        v >= 1000 ? `₹${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k` : `₹${v}`
+                      }
+                    />
                     <Tooltip
                       contentStyle={{
                         background: "hsl(var(--card))",
@@ -229,48 +232,62 @@ export default function AdminDashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <CardSpotlight className="p-6 h-full border border-border/80 bg-card/90 backdrop-blur-xl">
+              <CardSpotlight className="p-6 h-full border border-border/80 bg-card/90 backdrop-blur-xl flex flex-col justify-between">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-serif text-lg font-bold">Sales by Category</h3>
                   <span className="text-xs text-muted-foreground font-medium">Breakdown</span>
                 </div>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={stats.salesByCategory}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={52}
-                      outerRadius={80}
-                      paddingAngle={4}
-                      dataKey="revenue"
-                    >
-                      {stats.salesByCategory.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        background: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "0.75rem",
-                        fontSize: "0.875rem",
-                      }}
-                      formatter={(value: number) => [formatCurrency(value), "Revenue"]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-2 mt-4 max-h-[140px] overflow-y-auto custom-scrollbar pr-1">
-                  {stats.salesByCategory.map((cat) => (
-                    <div key={cat.category} className="flex items-center justify-between text-xs sm:text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                        <span className="text-muted-foreground font-medium">{cat.category}</span>
-                      </div>
-                      <span className="font-semibold">{formatCurrency(cat.revenue)}</span>
+                {stats.salesByCategory.length === 0 ? (
+                  <div className="h-[280px] flex flex-col items-center justify-center text-center p-4 space-y-2">
+                    <div className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground">
+                      <BarChart3 className="w-5 h-5 text-caramel" />
                     </div>
-                  ))}
-                </div>
+                    <p className="text-xs font-semibold text-foreground">No category sales recorded yet</p>
+                    <p className="text-xs text-muted-foreground max-w-[200px]">
+                      Category breakdowns will display once orders are checked out.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <PieChart>
+                        <Pie
+                          data={stats.salesByCategory}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={52}
+                          outerRadius={80}
+                          paddingAngle={4}
+                          dataKey="revenue"
+                        >
+                          {stats.salesByCategory.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            background: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "0.75rem",
+                            fontSize: "0.875rem",
+                          }}
+                          formatter={(value: number) => [formatCurrency(value), "Revenue"]}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="space-y-2 mt-4 max-h-[140px] overflow-y-auto custom-scrollbar pr-1">
+                      {stats.salesByCategory.map((cat) => (
+                        <div key={cat.category} className="flex items-center justify-between text-xs sm:text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                            <span className="text-muted-foreground font-medium">{cat.category}</span>
+                          </div>
+                          <span className="font-semibold">{formatCurrency(cat.revenue)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </CardSpotlight>
             </motion.div>
           </div>
@@ -287,22 +304,30 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <h3 className="font-serif text-lg font-bold">Live Orders</h3>
-                    <span className="relative flex h-2 w-2">
+                    <span className="relative flex h-2 w-2" title="Live stream">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground">Auto-updates</span>
                 </div>
-                <div className="space-y-2.5 overflow-y-auto flex-1 custom-scrollbar pr-1">
+                <div className="space-y-2.5 overflow-y-auto flex-1 custom-scrollbar pr-1 flex flex-col justify-center">
                   {stats.recentOrders.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-12">No orders today yet</p>
+                    <div className="py-8 text-center space-y-2 my-auto flex flex-col items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground">
+                        <ShoppingBag className="w-5 h-5 text-caramel" />
+                      </div>
+                      <p className="text-xs font-semibold text-foreground">No orders placed today yet</p>
+                      <p className="text-xs text-muted-foreground max-w-[220px]">
+                        Incoming dine-in and takeaway tickets will stream here in real time.
+                      </p>
+                    </div>
                   ) : (
                     stats.recentOrders.map((order) => (
                       <div key={order.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/40 border border-border/60 hover:border-caramel/30 transition-colors">
                         <div>
                           <p className="text-xs font-bold">{order.orderNumber.split("-").pop()}</p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                          <p className="text-xs text-muted-foreground mt-0.5">
                             {order.type.replace("_", " ")} {order.table ? `• T${order.table.number}` : ""}
                           </p>
                         </div>
@@ -325,15 +350,23 @@ export default function AdminDashboard() {
                   <h3 className="font-serif text-lg font-bold">Upcoming Bookings</h3>
                   <span className="text-xs text-muted-foreground">Today</span>
                 </div>
-                <div className="space-y-2.5 overflow-y-auto flex-1 custom-scrollbar pr-1">
+                <div className="space-y-2.5 overflow-y-auto flex-1 custom-scrollbar pr-1 flex flex-col justify-center">
                   {stats.upcomingReservations.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-12">No upcoming bookings</p>
+                    <div className="py-8 text-center space-y-2 my-auto flex flex-col items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground">
+                        <CalendarDays className="w-5 h-5 text-caramel" />
+                      </div>
+                      <p className="text-xs font-semibold text-foreground">No bookings scheduled today</p>
+                      <p className="text-xs text-muted-foreground max-w-[220px]">
+                        Guest reservations and table pre-allocations will appear here.
+                      </p>
+                    </div>
                   ) : (
                     stats.upcomingReservations.map((res) => (
                       <div key={res.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/40 border border-border/60 hover:border-caramel/30 transition-colors">
                         <div>
                           <p className="text-xs font-bold">{res.guestName}</p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                          <p className="text-xs text-muted-foreground mt-0.5">
                             <Users className="w-3 h-3 inline mr-1 text-caramel" />{res.partySize} • <Clock className="w-3 h-3 inline mr-1 text-caramel" />{res.timeSlot} {res.table ? `• T${res.table.number}` : ""}
                           </p>
                         </div>
@@ -356,9 +389,17 @@ export default function AdminDashboard() {
                   <h3 className="font-serif text-lg font-bold">Top Selling Items</h3>
                   <span className="text-xs text-caramel font-semibold">Today</span>
                 </div>
-                <div className="space-y-3 overflow-y-auto flex-1 custom-scrollbar pr-1">
+                <div className="space-y-3 overflow-y-auto flex-1 custom-scrollbar pr-1 flex flex-col justify-center">
                   {stats.topSellingItems.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-12">No sales recorded today</p>
+                    <div className="py-8 text-center space-y-2 my-auto flex flex-col items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center mx-auto text-muted-foreground">
+                        <UtensilsCrossed className="w-5 h-5 text-caramel" />
+                      </div>
+                      <p className="text-xs font-semibold text-foreground">No sales recorded today yet</p>
+                      <p className="text-xs text-muted-foreground max-w-[200px] mx-auto">
+                        Top-selling items will populate as orders are served.
+                      </p>
+                    </div>
                   ) : (
                     stats.topSellingItems.map((item, i) => (
                       <div key={item.name} className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/30 transition-colors">
@@ -367,7 +408,7 @@ export default function AdminDashboard() {
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold truncate">{item.name}</p>
-                          <p className="text-[11px] text-muted-foreground">{item.count} sold</p>
+                          <p className="text-xs text-muted-foreground">{item.count} sold</p>
                         </div>
                         <span className="text-xs font-bold font-sans text-foreground">{formatCurrency(item.revenue)}</span>
                       </div>

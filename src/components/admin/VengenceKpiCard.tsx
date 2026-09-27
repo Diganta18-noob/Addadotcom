@@ -69,11 +69,11 @@ export function VengenceKpiCard({
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <span className="text-xs font-medium text-muted-foreground">
                 {label}
               </span>
               {isLive && (
-                <span className="relative flex h-2 w-2">
+                <span className="relative flex h-2 w-2" title="Live real-time metric">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                 </span>
@@ -114,11 +114,11 @@ export function VengenceKpiCard({
 
           <div
             className={cn(
-              "w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 shadow-sm",
+              "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border border-border/60 transition-transform duration-300 group-hover:scale-105 shadow-xs",
               color
             )}
           >
-            <Icon className="w-6 h-6" />
+            <Icon className="w-5 h-5" />
           </div>
         </div>
       </CardSpotlight>

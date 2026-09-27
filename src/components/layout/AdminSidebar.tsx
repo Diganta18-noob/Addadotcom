@@ -186,7 +186,7 @@ export function AdminTopbar({ sidebarCollapsed, onOpenCommand }: AdminTopbarProp
         <div className="flex items-center gap-3 pl-2 border-l border-border/60">
           <div className="text-right hidden sm:block">
             <p className="text-xs font-bold text-foreground">Admin Portal</p>
-            <p className="text-[11px] text-muted-foreground">admin@addadotcom.cafe</p>
+            <p className="text-xs text-muted-foreground">admin@addadotcom.cafe</p>
           </div>
           <div className="w-9 h-9 rounded-full bg-espresso flex items-center justify-center border border-caramel/20 shadow-sm">
             <Users className="w-4 h-4 text-caramel" />

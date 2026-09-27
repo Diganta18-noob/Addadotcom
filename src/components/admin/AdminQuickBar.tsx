@@ -4,13 +4,13 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  ChefHat,
-  Receipt,
-  Grid3X3,
-  BarChart3,
-  Zap,
-  Sparkles,
+  ShoppingBag,
+  CalendarDays,
+  UtensilsCrossed,
+  Package,
   ClipboardList,
+  Sparkles,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,12 +23,11 @@ interface QuickAction {
 }
 
 const quickActions: QuickAction[] = [
-  { href: "/admin/kitchen", label: "Kitchen (KDS)", icon: ChefHat, badge: "Live", isHot: true },
-  { href: "/admin/orders", label: "Orders", icon: ClipboardList },
-  { href: "/admin/billing", label: "POS / Billing", icon: Receipt },
-  { href: "/admin/tables", label: "Tables & QR", icon: Grid3X3 },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/admin/automation", label: "Automations", icon: Zap },
+  { href: "/order", label: "+ New Order", icon: ShoppingBag, badge: "POS", isHot: true },
+  { href: "/admin/reservations", label: "+ New Booking", icon: CalendarDays },
+  { href: "/admin/menu", label: "+ Add Dish", icon: UtensilsCrossed },
+  { href: "/admin/inventory", label: "+ Stock Intake", icon: Package },
+  { href: "/admin/orders", label: "Active Orders", icon: ClipboardList },
 ];
 
 export function AdminQuickBar() {
