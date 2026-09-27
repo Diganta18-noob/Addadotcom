@@ -362,17 +362,68 @@ function AdminBillingContent() {
 
   return (
     <div className="space-y-6">
+      {/* Quick Visual Table Selector Chips (Skiper UI style) */}
+      <div className="bg-card/80 backdrop-blur-xl border border-border/80 rounded-2xl p-3 shadow-xs space-y-2">
+        <div className="flex items-center justify-between text-xs px-1">
+          <span className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">
+            Quick Table Select (POS)
+          </span>
+          <span className="text-[10px] text-muted-foreground">
+            {tables.filter((t) => orders.some((o) => o.tableId === t.id && o.type === "DINE_IN" && !["COMPLETED", "CANCELLED"].includes(o.status))).length} occupied
+          </span>
+        </div>
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+          {tables.map((table) => {
+            const hasOrder = orders.some(
+              (o) =>
+                o.tableId === table.id &&
+                o.type === "DINE_IN" &&
+                !["COMPLETED", "CANCELLED"].includes(o.status)
+            );
+            const isSelected = selectedTableId === table.id;
+
+            return (
+              <button
+                key={table.id}
+                onClick={() => setSelectedTableId(table.id)}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 border",
+                  isSelected
+                    ? "bg-espresso text-cream border-caramel shadow-sm scale-105"
+                    : hasOrder
+                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
+                    : "bg-muted/40 text-muted-foreground border-border/70 hover:bg-muted"
+                )}
+              >
+                <span
+                  className={cn(
+                    "w-2 h-2 rounded-full",
+                    hasOrder ? "bg-amber-500 animate-pulse" : "bg-emerald-500"
+                  )}
+                />
+                <span>Table {table.number}</span>
+                {hasOrder && (
+                  <span className="text-[9px] uppercase tracking-wider font-extrabold text-amber-500">
+                    Active
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="grid lg:grid-cols-5 gap-6">
         {/* Left: Bill Builder */}
         <div className="lg:col-span-3 space-y-6">
-          {/* Table selector */}
-          <div className="flex items-center gap-4">
+          {/* Table selector header */}
+          <div className="flex items-center gap-4 bg-card/60 backdrop-blur-md border border-border/70 p-3 rounded-2xl shadow-xs">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Table:</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Console:</span>
               <select
                 value={selectedTableId}
                 onChange={(e) => setSelectedTableId(e.target.value)}
-                className="px-3 py-2 bg-muted border border-border rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-caramel/50"
+                className="px-3 py-1.5 bg-muted border border-border rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-caramel/50"
               >
                 {tables.map((table) => {
                   const hasOrder = orders.some(
@@ -392,10 +443,11 @@ function AdminBillingContent() {
             <StatusBadge status={billPaid ? "PAID" : activeOrder ? "UNPAID" : "NO ACTIVE ORDER"} size="md" />
             <button
               onClick={() => { setLoading(true); fetchData(); }}
-              className="ml-auto px-3 py-2 bg-muted border border-border rounded-lg text-sm hover:bg-muted/80 transition-colors"
+              className="ml-auto px-3 py-1.5 bg-muted border border-border rounded-xl text-xs font-medium hover:bg-muted/80 transition-colors flex items-center gap-1.5"
               title="Refresh console"
             >
-              <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+              <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin text-caramel")} />
+              <span className="hidden sm:inline">Sync</span>
             </button>
           </div>
 

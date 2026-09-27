@@ -129,9 +129,10 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
 
 interface AdminTopbarProps {
   sidebarCollapsed: boolean;
+  onOpenCommand?: () => void;
 }
 
-export function AdminTopbar({ sidebarCollapsed }: AdminTopbarProps) {
+export function AdminTopbar({ sidebarCollapsed, onOpenCommand }: AdminTopbarProps) {
   const pathname = usePathname();
 
   // Derive page title from pathname
@@ -159,7 +160,20 @@ export function AdminTopbar({ sidebarCollapsed }: AdminTopbarProps) {
         </span>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
+        {/* Skiper Command Palette Trigger Button */}
+        {onOpenCommand && (
+          <button
+            onClick={onOpenCommand}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border border-border/80 bg-muted/40 hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all shadow-xs"
+            title="Open Command Palette (⌘K / Ctrl+K)"
+          >
+            <span className="text-caramel font-mono text-xs">⌘</span>
+            <span className="hidden sm:inline">Search pages & actions...</span>
+            <kbd className="px-1.5 py-0.5 rounded bg-card border border-border text-[9px] font-mono">⌘K</kbd>
+          </button>
+        )}
+
         <Link
           href="/"
           target="_blank"

@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { AdminSidebar, AdminTopbar } from "@/components/layout/AdminSidebar";
 import { AdminNotifier } from "@/components/admin/AdminNotifier";
 import { MouseAura } from "@/components/animations/MouseAura";
+import { SceneAILightMesh } from "@/components/admin/SceneAILightMesh";
+import { SkiperCommandPalette, useSkiperCommand } from "@/components/shared/SkiperCommandPalette";
 import { cn } from "@/lib/utils";
 import { ShieldAlert, LogIn } from "lucide-react";
 
@@ -17,6 +19,7 @@ export default function AdminLayout({
   const { data: session, status } = useSession();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const commandPalette = useSkiperCommand();
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -70,16 +73,30 @@ export default function AdminLayout({
     );
   }
 
-  // 4. Authorized Admin Layout
+  // 4. Authorized Admin Layout with SceneAI, Skiper & Vengence elements
   return (
     <div className="min-h-screen bg-background relative overflow-x-hidden">
-      <MouseAura color="rgba(212, 160, 86, 0.06)" size={480} />
+      {/* SceneAI Ambient Lighting & Fine Tech HUD Grid */}
+      <SceneAILightMesh />
+
+      {/* AnimMasterLib Mouse Aura Spotlight */}
+      <MouseAura color="rgba(212, 160, 86, 0.07)" size={500} />
+
+      {/* Global Skiper Command Palette (⌘K) */}
+      <SkiperCommandPalette
+        isOpen={commandPalette.isOpen}
+        onClose={commandPalette.close}
+      />
+
       <AdminNotifier />
       <AdminSidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
-      <AdminTopbar sidebarCollapsed={collapsed} />
+      <AdminTopbar
+        sidebarCollapsed={collapsed}
+        onOpenCommand={commandPalette.open}
+      />
       <main
         className={cn(
-          "pt-16 min-h-screen transition-all duration-300",
+          "pt-16 min-h-screen transition-all duration-300 relative z-10",
           collapsed ? "ml-16" : "ml-64"
         )}
       >
